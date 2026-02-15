@@ -1,0 +1,49 @@
+name: apex
+
+services:
+  web:
+    build: ./backend
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes: 
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on: 
+      - db
+    env_file: 
+      - ./backend/.env
+
+  client:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - web
+
+  db:
+    image: postgres:18
+    container_name: apex_db
+    environment:
+      - POSTGRES_DB=apex_training
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d apex_training"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  pg_data:
