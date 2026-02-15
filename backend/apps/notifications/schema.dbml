@@ -1,0 +1,19 @@
+// Notifications Layer
+
+// Models
+table app_invites {
+    id uuid [pk]
+    invited_by_id uuid [ref: > trainer_profile.id]
+    invited varchar
+    training_goal_id int [ref: > training_goal.id, null]
+    experience_level_id int [ref: > experience_level.id, null]
+    invited_at datetime
+}
+
+table membership_invites {
+    id uuid [pk]
+    invited_by_id uuid [ref: > client_profile.id]
+    invited uuid [ref: > trainer_profile.id]
+    invited_at datetime
+    trainer_client_membership_id uuid [ref: > trainer_client_membership.id]
+}

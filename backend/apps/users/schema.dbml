@@ -1,0 +1,63 @@
+// User Layer
+
+// Normalisation
+table training_goal {
+    id uuid [pk]
+    goal_name varchar [unique, not null]
+}
+
+table experience_level {
+    id uuid [pk]
+    level_name varchar [unique, not null]
+}
+
+table membership_status {
+    id uuid [pk]
+    status_name varchar [unique, not null, note: "PENDING_TRAINER_REVIEW | PENDING_CLIENT_CONFIRM | ACTIVE | REJECTED | CLIENT_DISSOLVED | TRAINER DISSOLVED"]
+}
+
+// Models
+table user {
+    id uuid [pk]
+    email varchar [unique, not null]
+    first_name varchar [unique, not null]
+    last_name varchar [unique, not null]
+    password varchar [not null]
+    created_at datetime
+    updated_at datetime
+}
+
+table trainer_profile {
+    id uuid [pk]
+    company varchar [unique, not null]
+    location varchar [not null]
+    user_id uuid [ref: - user.id]
+    website varchar [null]
+    logo varchar [null]
+    updated_at datetime
+    created_at datetime
+}
+
+table client_profile {
+    id uuid [pk]
+    avatar varchar [null]
+    training_goal_id int [ref: > training_goal.id, null]
+    experience_level_id int [ref: > experience_level.id, null]
+    updated_at datetime
+    created_at datetime
+}
+
+table trainer_specialities {
+    id uuid [pk]
+    trainer_profile_id uuid [ref: > trainer_profile.id]
+    training_goal_id uuid [ref: > training_goal.id]
+    experience_level_id uuid [ref: > experience_level.id]
+}
+
+table trainer_client_membership {
+    id uuid [pk]
+    trainer_profile_id uuid [ref: > trainer_profile.id]
+    client_profile_id uuid [ref: > client_profile.id]
+    membership_status_id uuid [ref: > membership_status.id]
+    updated_at datetime
+}

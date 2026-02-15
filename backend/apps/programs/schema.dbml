@@ -1,0 +1,30 @@
+// Program Layer
+
+// Normalisation
+table program_phase_options {
+    id int [pk]
+    phase_name varchar [not null]
+    order_index int [not null]
+    duration int [not null]
+    description text [null]
+}
+
+// Models
+table program {
+    id uuid [pk]
+    weeks int [not null]
+    trainer_client_membership_id uuid [ref: > trainer_client_membership.id]
+    training_goal_id uuid [ref: > training_goal.id]
+    experience_level_id uuid [ref: > experience_level.id]
+    description text [null]
+    created_at datetime
+    updated_at datetime
+}
+
+table program_phase {
+    id uuid [pk]
+    program uuid [ref: > program.id]
+    phase int [ref: > program_phase_options.id]
+    created_at datetime
+    updated_at datetime
+}

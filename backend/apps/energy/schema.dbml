@@ -1,0 +1,20 @@
+// Energy Layer
+
+// Normalisation
+table energy_options {
+    id uuid [pk]
+    display_name enum
+    energy_value int
+    energy_color varchar
+    rest_impact int
+    volume_impact int
+    should_recommend_skip boolean
+}
+
+// Models
+table energy_record {
+    id uuid [pk]
+    energy_data_id uuid [ref: > energy_options.id]
+    client_profile_id uuid [ref: > client_profile.id]
+    check_in_date date
+}
