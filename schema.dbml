@@ -1,0 +1,262 @@
+// User Layer
+
+// Normailisation
+table training_goal {
+  id uuid [pk]
+  goal_name varchar [unique, not null]
+}
+
+table experience_level {
+  id uuid [pk]
+  level_name varchar [unique, not null]
+}
+
+table membership_status {
+  id uuid [pk]
+  status_name varchar [unique, not null, note: "PENDING_TRAINER_REVIEW | PENDING_CLIENT_CONFIRM | ACTIVE | REJECTED | CLIENT_DISSOLVED | TRAINER DISSOLVED"]
+}
+
+// Models
+table user {
+  id uuid [pk]
+  email varchar [unique, not null]
+  first_name varchar [unique, not null]
+  last_name varchar [unique, not null]
+  password varchar [not null]
+  created_at datetime
+  updated_at datetime
+}
+
+table trainer_profile {
+  id uuid [pk]
+  company varchar [unique, not null]
+  location varchar [not null]
+  user_id uuid [ref: - user.id]
+  website varchar [null]
+  logo varchar [null]
+  updated_at datetime
+  created_at datetime
+}
+
+table client_profile {
+  id uuid [pk]
+  avatar varchar [null]
+  training_goal_id int [ref: > training_goal.id, null]
+  experience_level_id int [ref: > experience_level.id, null]
+  updated_at datetime
+  created_at datetime
+}
+
+table trainer_specialities {
+  id uuid [pk]
+  trainer_profile_id uuid [ref: > trainer_profile.id]
+  training_goal_id uuid [ref: > training_goal.id]
+  experience_level_id uuid [ref: > experience_level.id]
+}
+
+table trainer_client_membership {
+  id uuid [pk]
+  trainer_profile_id uuid [ref: > trainer_profile.id]
+  client_profile_id uuid [ref: > client_profile.id]
+  membership_status_id uuid [ref: > membership_status.id]
+  updated_at datetime
+}
+
+// Biology Layer
+
+// Normalisation
+table plane_of_motion {
+  id uuid [pk]
+  plane_name varchar [unique, not null, note: "Sagittal | Coronal | Transverse"]
+}
+
+table anatomical_direction {
+  id uuid [pk]
+  direction_name varchar [unique, not null, note: "Anterior | Posterior | Superior | Inferior "]
+}
+
+// Models
+table joint_action {
+  id uuid [pk]
+  action_name varchar [unique, not null, note: "Flexion | Extension etc."]
+  plane_of_motion_id uuid [ref: > plane_of_motion.id]
+}
+
+table joint_capabilities {
+  id uuid [pk]
+  joint_action_id uuid [ref: > joint_action.id]
+  joint_id uuid [ref: > joint.id]
+}
+
+table muscle {
+  id uuid [pk]
+  muscle_name varchar [unique, not null]
+  anatomical_direction_id uuid [ref: > anatomical_direction.id]
+}
+
+table joint {
+  id uuid [pk]
+  joint_name varchar [unique, not null]
+}
+
+// Exercise Layer
+
+// Normalisation
+table muscle_role {
+  id uuid [pk]
+  role_name varchar [not null, note: "Primary | Secondary | Stabiliser"]
+  impact_factor decimal [not null, note: "0-1 value to represent percentage"]
+}
+
+table joint_motion_range {
+  id uuid [pk]
+  role_name varchar [not null, note: "Full | Most | Partial | Minimal"]
+  impact_factor decimal [not null, note: "0-1 value to represent percentage"]
+}
+
+table exercise_phases {
+  id uuid [pk]
+  phase_name varchar [not null, unique, note: "Eccentric | Isometric | Concentric | Isotonic"]
+}
+
+// Models
+table exercise {
+  id uuid [pk]
+  name varchar [unique, not null]
+  instruction_link varchar [unique, not null, note: "Points to Ninja API to offload instructions. Use a function to build api url from. Dont expose API Key here"]
+  created_at datetime
+}
+
+table exercise_movement {
+  id uuid [pk]
+  phase_id uuid [ref: > exercise_phases.id]
+  exercise_id uuid [ref: > exercise.id]
+}
+
+table joint_contribution {
+  id uuid [pk]
+  joint_id uuid [ref: > joint.id]
+  exercise_movement_id uuid [ref: > exercise_movement.id]
+  joint_motion_range_id uuid [ref: > joint_motion_range.id]
+}
+
+table muscle_contribution {
+  id uuid [pk]
+  muscle_id uuid [ref: > muscle.id]
+  exercise_movement_id uuid [ref: > exercise_movement.id]
+  muscle_role_id uuid [ref: > muscle_role.id]
+}
+
+// Program Layer
+
+// Normalisation
+table program_phase_options {
+  id int [pk]
+  phase_name varchar [not null]
+  order_index int [not null]
+  duration int [not null]
+  description text [null]
+}
+ 
+// Models
+table program {
+  id uuid [pk]
+  weeks int [not null]
+  trainer_client_membership_id uuid [ref: > trainer_client_membership.id]
+  training_goal_id uuid [ref: > training_goal.id]
+  experience_level_id uuid [ref: > experience_level.id]
+  description text [null]
+  created_at datetime
+  updated_at datetime
+}
+
+table program_phase {
+  id uuid [pk]
+  program uuid [ref: > program.id]
+  phase int [ref: > program_phase_options.id]
+  created_at datetime
+  updated_at datetime
+}
+
+// Workout Layer
+
+// Models
+table workout {
+  id uuid [pk]
+  estimated_duration_s int
+  created_at datetime
+  program_phase_id uuid [ref: > program_phase.id]
+  scheduled_for date
+  trainer_notes text
+}
+
+table workout_exercise {
+  id uuid [pk]
+  order int [not null]
+  exercise_id uuid [ref: > exercise.id]
+  workout_id uuid [ref: > workout.id]
+}
+
+table workout_set {
+  id uuid [pk]
+  workout_exercise_id uuid [ref: > workout_exercise.id]
+  reps_prescribed int [not null]
+  weight_prescribed decimal [not null]
+  rest_period int
+}
+
+table workout_in_progress_record {
+  id uuid [pk]
+  workout_id uuid [ref: - workout.id]
+  completed_at datetime
+}
+
+table workout_set_completion_record {
+  id uuid [pk]
+  workout_set_id uuid [ref: - workout_set.id]
+  reps_completed int [not null]
+  weight_completed decimal [not null]
+  completed_at datetime
+  workout_in_progress_record_id uuid [ref: > workout_in_progress_record.id]
+}
+
+// Energy Layer
+
+// Normalisation
+table energy_options {
+  id uuid [pk]
+  display_name enum
+  energy_value int
+  energy_color varchar
+  rest_impact int
+  volume_impact int
+  should_recommend_skip boolean
+}
+
+// Models
+table energy_record {
+  id uuid [pk]
+  energy_data_id uuid [ref: > energy_options.id]
+  client_profile_id uuid [ref: > client_profile.id]
+  check_in_date date
+}
+
+// Notifications Layer
+
+// Models
+table app_invites {
+  id uuid [pk]
+  invited_by_id uuid [ref: > trainer_profile.id]
+  invited varchar
+  training_goal_id int [ref: > training_goal.id, null]
+  experience_level_id int [ref: > experience_level.id, null]
+  invited_at datetime
+}
+
+table membership_invites {
+  id uuid [pk]
+  invited_by_id uuid [ref: > client_profile.id]
+  invited uuid [ref: > trainer_profile.id]
+  invited_at datetime
+  trainer_client_membership_id uuid [ref: > trainer_client_membership.id]
+}
