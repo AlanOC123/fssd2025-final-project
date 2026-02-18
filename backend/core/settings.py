@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "apps.exercises",  # Exercises App
     "apps.notifications",  # Notifications App
     "apps.workouts",  # Workouts App
+    "apps.users",  # Users App
 ]
 
 SITE_ID = 1  # Required for Site Identification and mapping by django.contrib.sites
@@ -222,6 +223,8 @@ ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD = [
 ]
 
 ACCOUNT_LOGIN_FIELDS = {"email"}
+
+AUTH_USER_MODEL = "users.CustomUser"
 
 
 # --- Production Only Settings ---
