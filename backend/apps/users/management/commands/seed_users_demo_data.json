@@ -1,0 +1,22 @@
+{
+    "trainer": {
+        "email": "coach@apex.com",
+        "password": "password123",
+        "first_name": "Apex",
+        "last_name": "Coach",
+        "company": "Apex Performance Systems",
+        "specialisations": ["Muscle Gain", "Strength"],
+        "accepted_levels": ["Intermediate", "Advanced"]
+    },
+    "client": {
+        "email": "demo@apex.com",
+        "password": "password123",
+        "first_name": "Demo",
+        "last_name": "Athlete",
+        "goal": "Muscle Gain",
+        "level": "Intermediate"
+    },
+    "membership": {
+        "status": "ACTIVE"
+    }
+}

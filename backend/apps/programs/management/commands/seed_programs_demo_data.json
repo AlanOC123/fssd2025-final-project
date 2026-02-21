@@ -1,0 +1,30 @@
+{
+    "trainer_email": "coach@apex.com",
+    "client_email": "demo@apex.com",
+    "program": {
+        "name": "Winter Hypertrophy Protocol",
+        "goal": "Muscle Gain",
+        "level": "Intermediate"
+    },
+    "phases": [
+        {
+            "option_name": "Accumulation",
+            "custom_duration": 4,
+            "is_active": false,
+            "is_completed": true,
+            "completed_at_offset_days": 7
+        },
+        {
+            "option_name": "Intensity",
+            "custom_duration": 6,
+            "is_active": true,
+            "is_completed": false
+        },
+        {
+            "option_name": "Recovery",
+            "custom_duration": 1,
+            "is_active": false,
+            "is_completed": false
+        }
+    ]
+}

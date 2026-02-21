@@ -1,0 +1,94 @@
+{
+    "program_name": "Winter Hypertrophy Protocol",
+    "client_email": "demo@apex.com",
+    "routines": {
+        "Accumulation": {
+            "schedule": [0, 2, 4],
+            "workouts": [
+                {
+                    "name": "Volume A (Upper)",
+                    "exercises": [
+                        {
+                            "name": "Barbell Bench Press",
+                            "sets": 4,
+                            "reps": 10,
+                            "start_weight": 60,
+                            "rpe": 7
+                        },
+                        {
+                            "name": "Bent Over Barbell Row",
+                            "sets": 4,
+                            "reps": 12,
+                            "start_weight": 50,
+                            "rpe": 7
+                        },
+                        {
+                            "name": "Dumbbell Bicep Curl",
+                            "sets": 3,
+                            "reps": 15,
+                            "start_weight": 12,
+                            "rpe": 8
+                        }
+                    ]
+                },
+                {
+                    "name": "Volume B (Lower)",
+                    "exercises": [
+                        {
+                            "name": "Barbell Squat",
+                            "sets": 4,
+                            "reps": 10,
+                            "start_weight": 90,
+                            "rpe": 7
+                        },
+                        {
+                            "name": "Romanian Deadlift",
+                            "sets": 3,
+                            "reps": 12,
+                            "start_weight": 80,
+                            "rpe": 7
+                        },
+                        {
+                            "name": "Standing Calf Raises",
+                            "sets": 3,
+                            "reps": 15,
+                            "start_weight": 40,
+                            "rpe": 8
+                        }
+                    ]
+                }
+            ]
+        },
+        "Intensity": {
+            "schedule": [0, 3, 5],
+            "workouts": [
+                {
+                    "name": "Intensity - Full Body",
+                    "exercises": [
+                        {
+                            "name": "Barbell Squat",
+                            "sets": 3,
+                            "reps": 5,
+                            "start_weight": 110,
+                            "rpe": 9
+                        },
+                        {
+                            "name": "Barbell Bench Press",
+                            "sets": 3,
+                            "reps": 5,
+                            "start_weight": 80,
+                            "rpe": 9
+                        },
+                        {
+                            "name": "Barbell Deadlift",
+                            "sets": 2,
+                            "reps": 5,
+                            "start_weight": 140,
+                            "rpe": 9
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

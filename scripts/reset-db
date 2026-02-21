@@ -21,4 +21,7 @@ docker-compose run --rm web python manage.py migrate
 echo "SEEDING DATABASE"
 docker-compose run --rm web python manage.py seed_db
 
+echo "SEEDING DEMO ENVIRONMENT"
+docker-compose run --rm web python manage.py seed_demo
+
 echo "✅ DATABASE RESET COMPLETE."
