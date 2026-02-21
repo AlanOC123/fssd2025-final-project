@@ -98,7 +98,7 @@ class CustomUser(ApexModel, AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
     def save(self, *args, **kwargs):
-        if self.is_trainer is True and self.is_client is True:
+        if self.is_trainer and self.is_client:
             raise ValidationError("A User cannot be both a trainer and a client")
 
         super().save(*args, **kwargs)

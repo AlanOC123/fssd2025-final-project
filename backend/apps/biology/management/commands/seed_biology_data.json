@@ -1,0 +1,260 @@
+{
+    "planes": ["Sagittal", "Frontal", "Transverse"],
+    "directions": [
+        "Anterior",
+        "Posterior",
+        "Lateral",
+        "Medial",
+        "Superior",
+        "Inferior"
+    ],
+    "movements": [
+        "Flexion",
+        "Extension",
+        "Abduction",
+        "Adduction",
+        "Internal Rotation",
+        "External Rotation",
+        "Horizontal Adduction",
+        "Horizontal Abduction",
+        "Dorsiflexion",
+        "Plantarflexion",
+        "Elevation",
+        "Depression",
+        "Protraction",
+        "Retraction"
+    ],
+    "joints": ["Shoulder", "Elbow", "Spine", "Hip", "Knee", "Ankle", "Scapula"],
+    "muscle_roles": ["Prime", "Synergist"],
+    "muscles": [
+        { "name": "Pectoralis Major", "direction": "Anterior" },
+        { "name": "Latissimus Dorsi", "direction": "Posterior" },
+        { "name": "Deltoid (Anterior)", "direction": "Anterior" },
+        { "name": "Deltoid (Lateral)", "direction": "Lateral" },
+        { "name": "Deltoid (Posterior)", "direction": "Posterior" },
+        { "name": "Trapezius", "direction": "Posterior" },
+        { "name": "Rhomboids", "direction": "Posterior" },
+        { "name": "Biceps Brachii", "direction": "Anterior" },
+        { "name": "Triceps Brachii", "direction": "Posterior" },
+        { "name": "Rectus Abdominis", "direction": "Anterior" },
+        { "name": "Obliques", "direction": "Lateral" },
+        { "name": "Erector Spinae", "direction": "Posterior" },
+        { "name": "Gluteus Maximus", "direction": "Posterior" },
+        { "name": "Gluteus Medius", "direction": "Lateral" },
+        { "name": "Quadriceps", "direction": "Anterior" },
+        { "name": "Hamstrings", "direction": "Posterior" },
+        { "name": "Gastrocnemius", "direction": "Posterior" },
+        { "name": "Soleus", "direction": "Posterior" },
+        { "name": "Tibialis Anterior", "direction": "Anterior" }
+    ],
+    "joint_actions": [
+        {
+            "joint": "Elbow",
+            "movement": "Flexion",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Biceps Brachii", "role": "Prime", "impact": 1.0 }
+            ]
+        },
+        {
+            "joint": "Elbow",
+            "movement": "Extension",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Triceps Brachii", "role": "Prime", "impact": 1.0 }
+            ]
+        },
+        {
+            "joint": "Shoulder",
+            "movement": "Flexion",
+            "plane": "Sagittal",
+            "muscles": [
+                {
+                    "name": "Deltoid (Anterior)",
+                    "role": "Prime",
+                    "impact": 1.0
+                },
+                {
+                    "name": "Pectoralis Major",
+                    "role": "Synergist",
+                    "impact": 0.6
+                }
+            ]
+        },
+        {
+            "joint": "Shoulder",
+            "movement": "Extension",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Latissimus Dorsi", "role": "Prime", "impact": 1.0 },
+                {
+                    "name": "Deltoid (Posterior)",
+                    "role": "Synergist",
+                    "impact": 0.7
+                }
+            ]
+        },
+        {
+            "joint": "Shoulder",
+            "movement": "Abduction",
+            "plane": "Frontal",
+            "muscles": [
+                { "name": "Deltoid (Lateral)", "role": "Prime", "impact": 1.0 }
+            ]
+        },
+        {
+            "joint": "Shoulder",
+            "movement": "Horizontal Adduction",
+            "plane": "Transverse",
+            "muscles": [
+                { "name": "Pectoralis Major", "role": "Prime", "impact": 1.0 },
+                {
+                    "name": "Deltoid (Anterior)",
+                    "role": "Synergist",
+                    "impact": 0.7
+                }
+            ]
+        },
+        {
+            "joint": "Shoulder",
+            "movement": "Horizontal Abduction",
+            "plane": "Transverse",
+            "muscles": [
+                {
+                    "name": "Deltoid (Posterior)",
+                    "role": "Prime",
+                    "impact": 1.0
+                },
+                { "name": "Rhomboids", "role": "Synergist", "impact": 0.6 }
+            ]
+        },
+        {
+            "joint": "Shoulder",
+            "movement": "Adduction",
+            "plane": "Frontal",
+            "muscles": [
+                { "name": "Latissimus Dorsi", "role": "Prime", "impact": 1.0 },
+                {
+                    "name": "Pectoralis Major",
+                    "role": "Synergist",
+                    "impact": 0.8
+                }
+            ]
+        },
+        {
+            "joint": "Shoulder",
+            "movement": "Abduction",
+            "plane": "Frontal",
+            "muscles": [
+                { "name": "Deltoid (Lateral)", "role": "Prime", "impact": 1.0 }
+            ]
+        },
+        {
+            "joint": "Scapula",
+            "movement": "Elevation",
+            "plane": "Frontal",
+            "muscles": [{ "name": "Trapezius", "role": "Prime", "impact": 1.0 }]
+        },
+        {
+            "joint": "Scapula",
+            "movement": "Retraction",
+            "plane": "Transverse",
+            "muscles": [
+                { "name": "Rhomboids", "role": "Prime", "impact": 1.0 },
+                { "name": "Trapezius", "role": "Synergist", "impact": 0.8 }
+            ]
+        },
+        {
+            "joint": "Scapula",
+            "movement": "Depression",
+            "plane": "Frontal",
+            "muscles": [
+                { "name": "Trapezius", "role": "Prime", "impact": 0.8 },
+                {
+                    "name": "Latissimus Dorsi",
+                    "role": "Synergist",
+                    "impact": 0.5
+                }
+            ]
+        },
+        {
+            "joint": "Spine",
+            "movement": "Flexion",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Rectus Abdominis", "role": "Prime", "impact": 1.0 }
+            ]
+        },
+        {
+            "joint": "Spine",
+            "movement": "Extension",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Erector Spinae", "role": "Prime", "impact": 1.0 }
+            ]
+        },
+        {
+            "joint": "Hip",
+            "movement": "Extension",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Gluteus Maximus", "role": "Prime", "impact": 1.0 },
+                { "name": "Hamstrings", "role": "Synergist", "impact": 0.8 }
+            ]
+        },
+        {
+            "joint": "Hip",
+            "movement": "Flexion",
+            "plane": "Sagittal",
+            "muscles": [
+                {
+                    "name": "Rectus Abdominis",
+                    "role": "Synergist",
+                    "impact": 0.4
+                }
+            ]
+        },
+        {
+            "joint": "Hip",
+            "movement": "Abduction",
+            "plane": "Frontal",
+            "muscles": [
+                { "name": "Gluteus Medius", "role": "Prime", "impact": 1.0 }
+            ]
+        },
+        {
+            "joint": "Knee",
+            "movement": "Flexion",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Hamstrings", "role": "Prime", "impact": 1.0 },
+                { "name": "Gastrocnemius", "role": "Synergist", "impact": 0.5 }
+            ]
+        },
+        {
+            "joint": "Knee",
+            "movement": "Extension",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Quadriceps", "role": "Prime", "impact": 1.0 }
+            ]
+        },
+        {
+            "joint": "Ankle",
+            "movement": "Plantarflexion",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Gastrocnemius", "role": "Prime", "impact": 1.0 },
+                { "name": "Soleus", "role": "Prime", "impact": 0.9 }
+            ]
+        },
+        {
+            "joint": "Ankle",
+            "movement": "Dorsiflexion",
+            "plane": "Sagittal",
+            "muscles": [
+                { "name": "Tibialis Anterior", "role": "Prime", "impact": 1.0 }
+            ]
+        }
+    ]
+}

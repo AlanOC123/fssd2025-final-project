@@ -2,8 +2,6 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from apps.users.models import (
-    ClientProfile,
-    CustomUser,
     ExperienceLevel,
     TrainerProfile,
     TrainingGoal,

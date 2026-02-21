@@ -27,6 +27,7 @@ DEBUG = config("DEBUG", default=not IS_PROD, cast=bool)
 
 # --- Environment Keys ---
 SECRET_KEY = config("SECRET_KEY")
+NINJA_API_KEY = config("NINJA_API_KEY")
 
 if IS_PROD:
     BREVO_API_KEY = config("BREVO_API_KEY")
@@ -72,6 +73,7 @@ INSTALLED_APPS = [
     "apps.notifications",  # Notifications App
     "apps.workouts",  # Workouts App
     "apps.users",  # Users App
+    "apps.programs",  # Programs App
 ]
 
 SITE_ID = 1  # Required for Site Identification and mapping by django.contrib.sites

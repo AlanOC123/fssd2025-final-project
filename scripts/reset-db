@@ -14,8 +14,8 @@ echo "WAITING FOR DB..."
 sleep 3  # Give the DB a second to wake up
 
 echo "RUNNING MIGRATIONS..."
-# We explicitly run makemigrations for users to handle that specific edge case
-docker-compose run --rm web python manage.py makemigrations users
+# Make migrations to database
+docker-compose run --rm web python manage.py makemigrations
 docker-compose run --rm web python manage.py migrate
 
 echo "SEEDING DATABASE"

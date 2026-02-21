@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # Set Working Directory
 WORKDIR /app
 
-# Set Environment Variables 
+# Set Environment Variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
