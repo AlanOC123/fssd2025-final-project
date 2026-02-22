@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.exercises.models import Exercise
@@ -68,8 +69,17 @@ class WorkoutCompletionRecord(ApexModel):
     is_skipped = models.BooleanField(default=False)
 
     workout = models.OneToOneField(
-        to=Workout, on_delete=models.CASCADE, related_name="completion_records"
+        to=Workout, on_delete=models.CASCADE, related_name="completion_record"
     )
+
+    def clean(self):
+        if self.is_skipped and self.time_taken_s > 0:
+            raise ValidationError("A skipped workout cannot have a time taken metric")
+        return super().clean()
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"Workout completion record for {self.workout}"
@@ -80,14 +90,29 @@ class WorkoutExerciseCompletionRecord(ApexModel):
     Record a workout exercise. Trackes in progress completions of client exercises.
     """
 
+    workout_completion_record = models.ForeignKey(
+        to=WorkoutCompletionRecord,
+        on_delete=models.CASCADE,
+        related_name="exercise_records",
+        null=True,
+    )
+
     workout_exercise = models.OneToOneField(
-        to=WorkoutExercise, on_delete=models.CASCADE, related_name="in_progress_record"
+        to=WorkoutExercise, on_delete=models.CASCADE, related_name="completion_record"
     )
 
     completed_at = models.DateTimeField(blank=True, null=True)
     is_skipped = models.BooleanField(default=False)
 
     difficulty_rating = models.SmallIntegerField(blank=True, null=True)
+
+    def clean(self):
+        if (
+            self.workout_completion_record.id
+            and self.workout_completion_record.is_skipped
+        ):
+            raise ValidationError("A skipped workout cannot have associated exercises")
+        return super().clean()
 
     def __str__(self):
         return f"Completion record of {self.workout_exercise.exercise}"
@@ -102,12 +127,13 @@ class WorkoutSetCompletionRecord(ApexModel):
     reps_completed = models.SmallIntegerField()
     weight_completed = models.DecimalField(max_digits=5, decimal_places=2)
     completed_at = models.DateTimeField(blank=True, null=True)
+    is_skipped = models.BooleanField(default=False)
 
     workout_set = models.OneToOneField(
-        to=WorkoutSet, on_delete=models.CASCADE, related_name="completed_set"
+        to=WorkoutSet, on_delete=models.CASCADE, related_name="completion_record"
     )
 
-    workout_in_progress_record = models.ForeignKey(
+    exercise_completion_record = models.ForeignKey(
         to=WorkoutExerciseCompletionRecord,
         on_delete=models.CASCADE,
         related_name="completed_sets",

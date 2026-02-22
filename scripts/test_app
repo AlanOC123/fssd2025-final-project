@@ -6,4 +6,4 @@
 set -e
 
 # Run the command in the 'web' container and remove it after
-docker-compose run --rm web pytest "apps/$@"
+docker-compose run --rm web pytest --create-db "apps/$@"

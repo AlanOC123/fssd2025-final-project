@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.users.models import ExperienceLevel, TrainerClientMembership, TrainingGoal
@@ -102,6 +103,21 @@ class ProgramPhase(ApexModel):
     completed_at = models.DateTimeField(null=True, blank=True)
 
     custom_duration = models.SmallIntegerField(default=0)
+
+    def save(self, *args, **kwargs):
+        if self.is_active and self.is_completed:
+            # Logical assertion that a program phase cant be complete and active
+            raise ValidationError("A Program Phase cant be active and complete")
+
+        if self.is_active:
+            # Logical runner to ensure one active phase per program
+            self.program.phases.exclude(id=self.id).update(is_active=False)
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        unique_together = [("program", "phase_option")]
+        ordering = ["-phase_option__order_index"]
 
     def __str__(self) -> str:
         return f"{self.phase_option.phase_name} of {self.program.program_name}"
