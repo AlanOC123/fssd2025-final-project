@@ -30,6 +30,9 @@ class Command(BaseCommand):
 
                 # Create Trainer (Superuser) ---
                 t_data = data["trainer"]
+                t_email = t_data["email"]
+
+                self.stdout.write(f"Seeding Trainer Profile. Email {t_email}")
 
                 # Check if user exists first to avoid crashing on re-runs
                 if not User.objects.filter(email=t_data["email"]).exists():
@@ -71,6 +74,9 @@ class Command(BaseCommand):
 
                 # Create Client (Superuser) ---
                 c_data = data["client"]
+                c_email = c_data["email"]
+
+                self.stdout.write(f"Seeding Client Profile. Email {c_email}")
 
                 if not User.objects.filter(email=c_data["email"]).exists():
                     client_user = User.objects.create_superuser(

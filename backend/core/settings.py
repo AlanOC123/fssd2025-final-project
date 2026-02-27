@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     "allauth.socialaccount",  # Social Authentication (For Google Sign In?)
     "anymail",  # HTTP Email Tool
     "cloudinary",  # Cloudinary Main App Support
+    "django_rich",  # Debugging (Terminal)
+    "django_extensions",  # Debugging (Werkzerg, Browser)
     # Apps
     "core",  # Apex Model
     "apps.analytics",  # Analytics App
@@ -115,6 +117,41 @@ TEMPLATES = [
 
 # Web Server Settings
 WSGI_APPLICATION = "core.wsgi.application"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "rich": {"datefmt": "[%X]"},
+    },
+    "handlers": {
+        "console": {
+            "class": "rich.logging.RichHandler",
+            "formatter": "rich",
+            "level": "INFO",
+            "rich_tracebacks": True,
+            "show_time": False,
+            "show_path": False,
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
 
 
 # --- Database Configuration ---
@@ -179,7 +216,7 @@ REST_AUTH = {
     "JWT_SERIALIZER": "dj_rest_auth.serializers.JWTSerializer",
     "JWT_SERIALIZER_WITH_EXPIRATION": "dj_rest_auth.serializers.JWTSerializerWithExpiration",
     "JWT_TOKEN_CLAIMS_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
-    "USER_DETAILS_SERIALIZER": "dj_rest_auth.serializers.UserDetailsSerializer",
+    "USER_DETAILS_SERIALIZER": "apps.users.serializers.CustomUserSerializer",
     "PASSWORD_RESET_SERIALIZER": "dj_rest_auth.serializers.PasswordResetSerializer",
     "PASSWORD_RESET_CONFIRM_SERIALIZER": "dj_rest_auth.serializers.PasswordResetConfirmSerializer",
     "PASSWORD_CHANGE_SERIALIZER": "dj_rest_auth.serializers.PasswordChangeSerializer",

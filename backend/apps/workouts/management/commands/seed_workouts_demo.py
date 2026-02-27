@@ -177,7 +177,7 @@ class Command(BaseCommand):
 
                                         WorkoutSetCompletionRecord.objects.create(
                                             workout_set=w_set,
-                                            workout_in_progress_record=w_ex_log,
+                                            exercise_completion_record=w_ex_log,
                                             reps_completed=reps_done,
                                             weight_completed=target_weight,
                                             reps_in_reserve=random.choice([1, 2]),

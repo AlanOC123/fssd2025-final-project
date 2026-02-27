@@ -1,0 +1,22 @@
+#!/bin/bash
+# Usage: ./scripts/rebuild
+# Example: ./scripts/rebuild
+
+# Ensure the script stops on errors
+set -e
+
+echo "Starting rebuild of docker container"
+
+echo "1/3 Shutting Down Containers"
+# Stop everything
+docker-compose down
+
+echo "2/3 Rebuilding From Scratch"
+# Rebuild web container (make sure it doesnt use cached image)
+docker-compose build --no-cache web
+
+echo "3/3 Rerunning Container"
+# Restart container
+docker-compose up -d
+
+echo "Build Complete. New Dependencies Installed"
