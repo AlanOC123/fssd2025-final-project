@@ -1,8 +1,11 @@
+import warnings
 from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
 from decouple import config
+
+warnings.filterwarnings("ignore", "app_settings.*is_deprecated")
 
 
 def csv_list(v: str):
@@ -220,7 +223,7 @@ REST_AUTH = {
     "PASSWORD_RESET_SERIALIZER": "dj_rest_auth.serializers.PasswordResetSerializer",
     "PASSWORD_RESET_CONFIRM_SERIALIZER": "dj_rest_auth.serializers.PasswordResetConfirmSerializer",
     "PASSWORD_CHANGE_SERIALIZER": "dj_rest_auth.serializers.PasswordChangeSerializer",
-    "REGISTER_SERIALIZER": "dj_rest_auth.registration.serializers.RegisterSerializer",
+    "REGISTER_SERIALIZER": "apps.users.serializers.CustomRegisterSerializer",
     # Permission Classes
     "REGISTER_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     # JWT Creation Settings
@@ -264,6 +267,8 @@ ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD = [
 ACCOUNT_LOGIN_FIELDS = {"email"}
 
 AUTH_USER_MODEL = "users.CustomUser"
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 
 
 # --- Production Only Settings ---

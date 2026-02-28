@@ -40,7 +40,7 @@ class Program(ApexModel):
         null=True,
     )
 
-    trainer_goal = models.ForeignKey(
+    training_goal = models.ForeignKey(
         to=TrainingGoal, related_name="programs", on_delete=models.PROTECT
     )
 

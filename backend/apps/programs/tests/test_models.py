@@ -60,7 +60,7 @@ class TestProgramLogic:
         program = Program.objects.create(
             program_name="Winter Arc",
             trainer_client_membership=self.membership,
-            trainer_goal=self.goal,
+            training_goal=self.goal,
             experience_level=self.level,
         )
 
@@ -74,7 +74,7 @@ class TestProgramLogic:
         program = Program.objects.create(
             program_name="Winter Arc",
             trainer_client_membership=self.membership,
-            trainer_goal=self.goal,
+            training_goal=self.goal,
             experience_level=self.level,
         )
 
@@ -91,7 +91,7 @@ class TestProgramLogic:
         program = Program.objects.create(
             program_name="Winter Arc",
             trainer_client_membership=self.membership,
-            trainer_goal=self.goal,
+            training_goal=self.goal,
             experience_level=self.level,
         )
 
@@ -110,7 +110,7 @@ class TestProgramLogic:
         program = Program.objects.create(
             program_name="Winter Arc",
             trainer_client_membership=self.membership,
-            trainer_goal=self.goal,
+            training_goal=self.goal,
             experience_level=self.level,
         )
 
@@ -123,7 +123,7 @@ class TestProgramLogic:
         program = Program.objects.create(
             program_name="Winter Arc",
             trainer_client_membership=self.membership,
-            trainer_goal=self.goal,
+            training_goal=self.goal,
             experience_level=self.level,
         )
 
@@ -145,7 +145,7 @@ class TestProgramLogic:
         program = Program.objects.create(
             program_name="Winter Arc",
             trainer_client_membership=self.membership,
-            trainer_goal=self.goal,
+            training_goal=self.goal,
             experience_level=self.level,
         )
 
@@ -165,7 +165,7 @@ class TestProgramLogic:
         program = Program.objects.create(
             program_name="Winter Arc",
             trainer_client_membership=self.membership,
-            trainer_goal=self.goal,
+            training_goal=self.goal,
             experience_level=self.level,
         )
 
@@ -194,7 +194,7 @@ class TestProgramLogic:
         program = Program.objects.create(
             program_name="Winter Arc",
             trainer_client_membership=self.membership,
-            trainer_goal=self.goal,
+            training_goal=self.goal,
             experience_level=self.level,
         )
 

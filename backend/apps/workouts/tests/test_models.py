@@ -47,7 +47,7 @@ class TestWorkoutLogic:
         program = Program.objects.create(
             program_name="Test Program",
             trainer_client_membership=membership,
-            trainer_goal=goal,
+            training_goal=goal,
             experience_level=level,
         )
 

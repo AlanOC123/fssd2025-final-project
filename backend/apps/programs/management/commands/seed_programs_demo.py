@@ -66,13 +66,13 @@ class Command(BaseCommand):
                 program, created = Program.objects.get_or_create(
                     program_name=prog_data["name"],
                     trainer_client_membership=membership,
-                    defaults={"trainer_goal": goal_obj, "experience_level": level_obj},
+                    defaults={"training_goal": goal_obj, "experience_level": level_obj},
                 )
 
                 if created:
                     self.stdout.write(f"Created Program: {program.program_name}")
                 else:
-                    self.stdout.write(f"Program already exists")
+                    self.stdout.write("Program already exists")
 
                 # Create Phases ---
                 # Clear existing phases from idempotency

@@ -13,9 +13,29 @@ from .models import (
 )
 
 
-class WorkoutSerializer(serializers.ModelSerializer):
+class WorkoutSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkoutSet
+        fields = [
+            "id",
+            "reps_prescribed",
+            "weight_prescribed",
+            "set_order",
+        ]
 
+
+class WorkoutExerciseSerializer(serializers.ModelSerializer):
+    exercise = ExerciseSerializer(read_only=True)
+    sets = WorkoutSetSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = WorkoutExercise
+        fields = ["id", "sets_prescribed", "order", "exercise", "sets"]
+
+
+class WorkoutSerializer(serializers.ModelSerializer):
     program_phase = ProgramPhaseSerializer(read_only=True)
+    exercises = WorkoutExerciseSerializer(read_only=True, many=True)
 
     class Meta:
         model = Workout
@@ -26,67 +46,21 @@ class WorkoutSerializer(serializers.ModelSerializer):
             "scheduled_for",
             "trainer_notes",
             "program_phase",
-        ]
-
-
-class WorkoutExerciseSerializer(serializers.ModelSerializer):
-    exercise = ExerciseSerializer(read_only=True)
-    workout_id = serializers.PrimaryKeyRelatedField(source="workout", read_only=True)
-
-    class Meta:
-        model = WorkoutExercise
-        fields = ["id", "sets_prescribed", "order", "workout_id", "exercise"]
-
-
-class WorkoutSetSerializer(serializers.ModelSerializer):
-    workout_exercise_id = serializers.PrimaryKeyRelatedField(
-        source="workout_exercise", read_only=True
-    )
-
-    class Meta:
-        model = WorkoutSet
-        fields = [
-            "reps_prescribed",
-            "weight_prescribed",
-            "set_order",
-            "workout_exercise",
-        ]
-
-
-class WorkoutCompletionRecordSerializer(serializers.ModelSerializer):
-    workout_id = serializers.PrimaryKeyRelatedField(source="workout", read_only=True)
-
-    class Meta:
-        model = WorkoutCompletionRecord
-        fields = ["time_taken_s", "completed_at", "is_skipped", "workout_id"]
-
-
-class WorkoutExerciseCompletionRecordSerializer(serializers.ModelSerializer):
-    workout_completion_record_id = serializers.PrimaryKeyRelatedField(
-        source="workout_completion_record", read_only=True
-    )
-    workout_exercise_id = serializers.PrimaryKeyRelatedField(
-        source="workout_exercise", read_only=True
-    )
-
-    class Meta:
-        model = WorkoutExerciseCompletionRecord
-        fields = [
-            "id",
-            "workout_completion_record_id",
-            "workout_exercise_id",
-            "completed_at",
-            "is_skipped",
-            "difficulty_rating",
+            "exercises",
         ]
 
 
 class WorkoutSetCompletionRecordSerializer(serializers.ModelSerializer):
+    workout_set = WorkoutSetSerializer(read_only=True)
+
     workout_set_id = serializers.PrimaryKeyRelatedField(
-        source="workout_set", read_only=True
+        queryset=WorkoutSet.objects.all(), source="workout_set", write_only=True
     )
+
     exercise_completion_record_id = serializers.PrimaryKeyRelatedField(
-        source="exercise_completion_record", read_only=True
+        queryset=WorkoutExerciseCompletionRecord.objects.all(),
+        source="exercise_completion_record",
+        write_only=True,
     )
 
     class Meta:
@@ -97,7 +71,69 @@ class WorkoutSetCompletionRecordSerializer(serializers.ModelSerializer):
             "weight_completed",
             "completed_at",
             "is_skipped",
+            "workout_set",
             "workout_set_id",
-            "exercise_completion_record_id",
             "reps_in_reserve",
+            "exercise_completion_record_id",
         ]
+
+        extra_kwargs = {"id": {"read_only": False, "required": False}}
+
+
+class WorkoutExerciseCompletionRecordSerializer(serializers.ModelSerializer):
+    completed_sets = WorkoutSetCompletionRecordSerializer(read_only=True, many=True)
+
+    workout_exercise = WorkoutExerciseSerializer(read_only=True)
+    workout_exercise_id = serializers.PrimaryKeyRelatedField(
+        queryset=WorkoutExercise.objects.all(),
+        source="workout_exercise",
+        write_only=True,
+    )
+
+    workout_completion_record_id = serializers.PrimaryKeyRelatedField(
+        queryset=WorkoutCompletionRecord.objects.all(),
+        source="workout_completion_record",
+        write_only=True,
+    )
+
+    class Meta:
+        model = WorkoutExerciseCompletionRecord
+        fields = [
+            "id",
+            "completed_sets",
+            "workout_exercise",
+            "workout_exercise_id",
+            "workout_completion_record_id",
+            "completed_at",
+            "is_skipped",
+            "difficulty_rating",
+        ]
+
+        extra_kwargs = {"id": {"read_only": False, "required": False}}
+
+
+class WorkoutCompletionRecordSerializer(serializers.ModelSerializer):
+    workout = WorkoutSerializer(read_only=True)
+    workout_id = serializers.PrimaryKeyRelatedField(
+        queryset=Workout.objects.all(), source="workout", write_only=True
+    )
+    exercise_records = WorkoutExerciseCompletionRecordSerializer(
+        read_only=True, many=True
+    )
+
+    class Meta:
+        model = WorkoutCompletionRecord
+        fields = [
+            "id",
+            "time_taken_s",
+            "completed_at",
+            "is_skipped",
+            "workout",
+            "workout_id",
+            "exercise_records",
+        ]
+
+        extra_kwargs = {"id": {"read_only": False, "required": False}}
+
+    def create(self, validated_data):
+        return super().create(validated_data)

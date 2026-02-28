@@ -20,6 +20,9 @@ class Workout(ApexModel):
         to=ProgramPhase, on_delete=models.CASCADE, related_name="workouts"
     )
 
+    class Meta:
+        ordering = ["scheduled_for"]
+
     def __str__(self) -> str:
         return self.workout_name
 
@@ -41,6 +44,10 @@ class WorkoutExercise(ApexModel):
         to=Exercise, on_delete=models.PROTECT, related_name="workouts"
     )
 
+    class Meta:
+        ordering = ["order"]
+        unique_together = ("workout", "order")
+
     def __str__(self) -> str:
         return f"{self.exercise} -> {self.workout}"
 
@@ -59,6 +66,10 @@ class WorkoutSet(ApexModel):
         to=WorkoutExercise, on_delete=models.CASCADE, related_name="sets"
     )
 
+    class Meta:
+        ordering = ["set_order"]
+        unique_together = ("workout_exercise", "set_order")
+
     def __str__(self) -> str:
         return f"Set {self.set_order} of {self.workout_exercise.sets_prescribed}"
 
@@ -71,6 +82,9 @@ class WorkoutCompletionRecord(ApexModel):
     workout = models.OneToOneField(
         to=Workout, on_delete=models.CASCADE, related_name="completion_record"
     )
+
+    class Meta:
+        ordering = ["completed_at"]
 
     def clean(self):
         if self.is_skipped and self.time_taken_s > 0:
@@ -106,11 +120,11 @@ class WorkoutExerciseCompletionRecord(ApexModel):
 
     difficulty_rating = models.SmallIntegerField(blank=True, null=True)
 
+    class Meta:
+        ordering = ["completed_at"]
+
     def clean(self):
-        if (
-            self.workout_completion_record.id
-            and self.workout_completion_record.is_skipped
-        ):
+        if self.workout_completion_record and self.workout_completion_record.is_skipped:
             raise ValidationError("A skipped workout cannot have associated exercises")
         return super().clean()
 
@@ -140,6 +154,9 @@ class WorkoutSetCompletionRecord(ApexModel):
     )
 
     reps_in_reserve = models.SmallIntegerField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["completed_at"]
 
     def __str__(self):
         return f"Set completion record of set {self.workout_set.set_order}"

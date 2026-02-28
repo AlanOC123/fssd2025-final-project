@@ -6,6 +6,8 @@ from apps.users.serializers import (
     TrainingGoalSerializer,
 )
 
+from apps.users.models import TrainingGoal, ExperienceLevel, TrainerClientMembership
+
 from .models import Program, ProgramPhase, ProgramPhaseOption
 
 
@@ -16,7 +18,16 @@ class ProgramPhaseOptionSerializer(serializers.ModelSerializer):
 
 
 class ProgramPhaseSerializer(serializers.ModelSerializer):
+    program_id = serializers.PrimaryKeyRelatedField(
+        queryset=Program.objects.all(), source="program", write_only=True
+    )
+
     phase_option = ProgramPhaseOptionSerializer(read_only=True)
+    phase_option_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProgramPhaseOption.objects.all(),
+        source="phase_option",
+        write_only=True,
+    )
 
     class Meta:
         model = ProgramPhase
@@ -27,17 +38,30 @@ class ProgramPhaseSerializer(serializers.ModelSerializer):
             "completed_at",
             "custom_duration",
             "phase_option",
+            "phase_option_id",
+            "program_id",
         ]
 
 
 class ProgramSerializer(serializers.ModelSerializer):
-    trainer_goal = TrainingGoalSerializer(read_only=True)
+    training_goal = TrainingGoalSerializer(read_only=True)
+    training_goal_id = serializers.PrimaryKeyRelatedField(
+        queryset=TrainingGoal.objects.all(), source="training_goal", write_only=True
+    )
+
     experience_level = ExperienceLevelSerializer(read_only=True)
+    experience_level_id = serializers.PrimaryKeyRelatedField(
+        queryset=ExperienceLevel.objects.all(),
+        source="experience_level",
+        write_only=True,
+    )
+
+    trainer_client_membership_id = serializers.PrimaryKeyRelatedField(
+        queryset=TrainerClientMembership.objects.all(),
+        source="trainer_client_membership",
+    )
 
     phases = ProgramPhaseSerializer(many=True, read_only=True)
-
-    trainer_client_membership = TrainerClientMembershipSerializer(read_only=True)
-
     calculated_duration = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -45,9 +69,11 @@ class ProgramSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "program_name",
-            "trainer_goal",
+            "training_goal",
+            "training_goal_id",
             "experience_level",
+            "experience_level_id",
             "phases",
             "calculated_duration",
-            "trainer_client_membership",
+            "trainer_client_membership_id",
         ]

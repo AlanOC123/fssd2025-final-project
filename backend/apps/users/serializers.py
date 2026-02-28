@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from dj_rest_auth.registration.serializers import RegisterSerializer
+
 from .models import (
     ClientProfile,
     ExperienceLevel,
@@ -96,6 +98,18 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
         else:
             return None
+
+
+class CustomRegisterSerializer(RegisterSerializer):
+    username = None
+
+    def get_cleaned_data(self):
+        data = super().get_cleaned_data()
+
+        if "username" in data:
+            del data["username"]
+
+        return data
 
 
 class TrainerClientMembershipSerializer(serializers.ModelSerializer):
