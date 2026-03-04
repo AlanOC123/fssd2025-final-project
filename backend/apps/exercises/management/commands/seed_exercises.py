@@ -1,10 +1,15 @@
 import json
 import os
+import time
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import BaseCommand
+from requests import exceptions, get
 
 from apps.biology.models import Joint, JointAction
 from apps.exercises.models import (
+    Equipment,
     Exercise,
     ExerciseMovement,
     ExercisePhase,
@@ -22,6 +27,21 @@ class Command(BaseCommand):
         base_dir = os.path.dirname(__file__)
         file_path = os.path.join(base_dir, "seed_exercises_data.json")
         objects_written = 0
+
+        CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+        CACHE_FILE_PATH = os.path.join(CURRENT_DIR, "enrichment_data.json")
+
+        api_cache = {}
+
+        if os.path.exists(CACHE_FILE_PATH):
+            try:
+                with open(CACHE_FILE_PATH) as f:
+                    api_cache = json.load(f)
+            except json.JSONDecodeError as e:
+                self.stdout.write(self.style.ERROR(e.msg))
+                api_cache = {}
+
+        self.stdout.write(f"Loaded {len(api_cache)} exercises from local cache.")
 
         try:
             with open(file_path) as f:
@@ -71,9 +91,61 @@ class Command(BaseCommand):
                     api_name = exercise_data["api_name"]
                     level_key = exercise_data["level"]
 
+                    api_key = settings.NINJA_API_KEY
+
+                    if not api_key:
+                        raise ImproperlyConfigured("Missing Ninja API Key in settings")
+
+                    if api_name not in api_cache:
+                        self.stdout.write(
+                            "Exercise data not in cache. Fetching data from API Ninja..."
+                        )
+
+                        time.sleep(2)
+                        api_ninja_response = get(
+                            f"https://api.api-ninjas.com/v1/exercises?name={api_name}",
+                            headers={"X-Api-Key": api_key},
+                        )
+
+                        data_arr = api_ninja_response.json()
+
+                        for result in data_arr:
+                            self.stdout.write(
+                                f"Expected: {api_name}. Found: {result.get('name')}"
+                            )
+
+                        if len(data_arr) == 0:
+                            raise ValueError(
+                                f"API Response should have returned at least 1 result. Returned: {len(data_arr)}"
+                            )
+
+                        enrichment_data = data_arr[0]
+                        self.stdout.write(self.style.SUCCESS("Data fetched!"))
+
+                        instructions = enrichment_data["instructions"]
+                        equipment = enrichment_data["equipments"]
+                        safety_info = enrichment_data["safety_info"]
+
+                        api_cache[api_name] = {
+                            "instructions": instructions,
+                            "equipment": equipment,
+                            "safety_info": safety_info,
+                        }
+
+                        with open(CACHE_FILE_PATH, "w") as f:
+                            self.stdout.write(
+                                "Writing response to local file for future requests..."
+                            )
+                            json.dump(api_cache, f, indent=4)
+
+                    instructions = api_cache[api_name]["instructions"]
+                    equipment = api_cache[api_name]["equipment"]
+                    safety_info = api_cache[api_name]["safety_info"]
+
                     # Get the Level from the Database (User Seeding needs to happen)
                     try:
                         level_obj = ExperienceLevel.objects.get(level_name=level_key)
+
                     except ExperienceLevel.DoesNotExist:
                         raise ValueError(f"Experience Level\
                                 '{level_key}' does not exist in DB.")
@@ -85,8 +157,30 @@ class Command(BaseCommand):
                             "api_name": api_name,
                             "experience_level": level_obj,
                             "is_enriched": False,
+                            "instructions": instructions,
+                            "safety_tips": safety_info,
                         },
                     )
+
+                    for item in equipment:
+                        equip_obj, equip_created = Equipment.objects.get_or_create(
+                            equipment_name=item
+                        )
+
+                        exercise_obj.equipment.add(equip_obj)
+
+                        if equip_created:
+                            self.stdout.write(f"    Created: {equip_obj}")
+                            objects_written += 1
+
+                    if (
+                        exercise_obj.instructions
+                        and exercise_obj.safety_tips
+                        and exercise_obj.equipment.count
+                    ):
+                        exercise_obj.is_enriched = True
+
+                    exercise_obj.save()
 
                     # If created, log it
                     if ex_created:
