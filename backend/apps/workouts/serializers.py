@@ -117,6 +117,7 @@ class WorkoutCompletionRecordSerializer(serializers.ModelSerializer):
     workout_id = serializers.PrimaryKeyRelatedField(
         queryset=Workout.objects.all(), source="workout", write_only=True
     )
+
     exercise_records = WorkoutExerciseCompletionRecordSerializer(
         read_only=True, many=True
     )

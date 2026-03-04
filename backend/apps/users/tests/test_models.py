@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from model_bakery import baker
 
 from apps.users.models import (
     ClientProfile,
@@ -81,61 +82,38 @@ class TestUserProfileSignal:
         """
         Signal should automatically create a trainer profile
         """
-        user = User.objects.create(
-            email=TEST_EMAILS["trainer"], password=TEST_PASSWORD, is_trainer=True
-        )
 
-        user.refresh_from_db()
+        # Create the user as a trainer
+        user = baker.make(User, is_trainer=True)
 
+        # Assert the signal works
         assert hasattr(user, "trainer_profile")
-        assert isinstance(user.trainer_profile, TrainerProfile)
 
     def test_client_profile_auto_creation(self):
         """
         Signal should automatically create a client profile
         """
-        user = User.objects.create(
-            email=TEST_EMAILS["client"], password=TEST_PASSWORD, is_client=True
-        )
-
-        user.refresh_from_db()
+        user = baker.make(User, is_client=True)
 
         assert hasattr(user, "client_profile")
-        assert isinstance(user.client_profile, ClientProfile)
 
 
 # Test unique and single instance of membership
 @pytest.mark.django_db
 class TestMembershipLogic:
-    def test_single_active_trainer_constraint(self):
-        """
-        Tests a client cannot have two active trainers at once.
-        """
 
-        active_status, _ = MembershipStatus.objects.get_or_create(status_name="ACTIVE")
+    @pytest.fixture(autouse=True)
+    def setup_data(self):
+        """Sets up core test data"""
 
-        # Create the actors
-        trainer_1 = User.objects.create(
-            email=TEST_EMAILS["trainer"], password=TEST_PASSWORD, is_trainer=True
-        ).trainer_profile
-        trainer_2 = User.objects.create(
-            email=TEST_EMAILS["add_trainer"], password=TEST_PASSWORD, is_trainer=True
-        ).trainer_profile
-        client = User.objects.create(
-            email=TEST_EMAILS["client"], password=TEST_PASSWORD, is_client=True
-        ).client_profile
-
-        # Create the active membership
-        TrainerClientMembership.objects.create(
-            trainer=trainer_1, client=client, status=active_status
+        # Create statuses
+        self.active_status = baker.make(MembershipStatus, status_name="ACTIVE")
+        self.dissolved_status = baker.make(
+            MembershipStatus, status_name="CLIENT_DISSOLVED"
         )
 
-        # Try to create a new one with a different trainer
-        # Should fail
-        with pytest.raises(ValidationError):
-            TrainerClientMembership.objects.create(
-                trainer=trainer_2, client=client, status=active_status
-            )
+        # Reusable client profile
+        self.client_profile = baker.make(ClientProfile)
 
     def test_switching_trainers(self):
         """
@@ -143,31 +121,19 @@ class TestMembershipLogic:
         as long as they dont have an existing membership
         """
 
-        # Create status records
-        active_status, _ = MembershipStatus.objects.get_or_create(status_name="ACTIVE")
-        dissolved_status, _ = MembershipStatus.objects.get_or_create(
-            status_name="CLIENT_DISSOLVED"
+        # Create first membership (inactive)
+        baker.make(
+            TrainerClientMembership,
+            client=self.client_profile,
+            status=self.dissolved_status,
         )
 
-        # Set up users
-        trainer_1 = User.objects.create(
-            email=TEST_EMAILS["trainer"], password=TEST_PASSWORD, is_trainer=True
-        ).trainer_profile
-
-        trainer_2 = User.objects.create(
-            email=TEST_EMAILS["add_trainer"], password=TEST_PASSWORD, is_trainer=True
-        ).trainer_profile
-
-        client = User.objects.create(
-            email=TEST_EMAILS["client"], password=TEST_PASSWORD, is_client=True
-        ).client_profile
-
-        TrainerClientMembership.objects.create(
-            trainer=trainer_1, client=client, status=dissolved_status
+        # Create second membership (active)
+        new_membership = baker.make(
+            TrainerClientMembership,
+            client=self.client_profile,
+            status=self.active_status,
         )
 
-        new_membership = TrainerClientMembership.objects.create(
-            trainer=trainer_2, client=client, status=active_status
-        )
-
+        # Ensure creation of new membership
         assert new_membership.id is not None

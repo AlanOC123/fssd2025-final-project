@@ -1,7 +1,9 @@
 import pytest
 from django.contrib.auth import get_user_model
+from model_bakery import baker
 
 from apps.users.models import (
+    ClientProfile,
     ExperienceLevel,
     TrainerProfile,
     TrainingGoal,
@@ -30,69 +32,60 @@ LEVEL_INTER = "Intermediate"
 @pytest.mark.django_db
 class TestMatchingConstraints:
 
+    @pytest.fixture(autouse=True)
     def setup_method(self):
         # Create look up data
-        self.goal_strength, _ = TrainingGoal.objects.get_or_create(
-            goal_name=GOAL_STRENGTH
-        )
-        self.goal_muscle_mass, _ = TrainingGoal.objects.get_or_create(
-            goal_name=GOAL_MUSCLE_MASS
-        )
+        self.goal_strength = baker.make(TrainingGoal, goal_name="Strength")
+        self.goal_muscle_mass = baker.make(TrainingGoal, goal_name="Muscle Mass")
 
-        self.level_begin, _ = ExperienceLevel.objects.get_or_create(
-            level_name=LEVEL_BEGIN
-        )
-        self.level_inter, _ = ExperienceLevel.objects.get_or_create(
-            level_name=LEVEL_INTER
-        )
+        self.level_begin = baker.make(ExperienceLevel, level_name="Beginner")
+        self.level_inter = baker.make(ExperienceLevel, level_name="Intermediate")
+
+        self.client = baker.make(ClientProfile)
+        self.trainer_a = baker.make(TrainerProfile)
+        self.trainer_b = baker.make(TrainerProfile)
+        self.trainer_c = baker.make(TrainerProfile)
 
     def test_client_constraints_single_selection(self):
         """
         Tests if a user can only add exactly 1 goal and 1 level
         """
 
-        user = User.objects.create(
-            email=TEST_EMAILS["base"], password=TEST_PASSWORD, is_client=True
-        )
-
-        profile = user.client_profile
-
         # Set initial values
-        profile.training_goal = self.goal_strength
-        profile.experience_level = self.level_begin
-        profile.save()
+        self.client.training_goal = self.goal_strength
+        self.client.experience_level = self.level_begin
+        self.client.save()
 
         # Verify
-        assert profile.training_goal == self.goal_strength
-        assert profile.experience_level == self.level_begin
+        assert self.client.training_goal == self.goal_strength
+        assert self.client.experience_level == self.level_begin
 
         # Try update
-        profile.training_goal = self.goal_muscle_mass
-        profile.save()
+        self.client.training_goal = self.goal_muscle_mass
+        self.client.save()
 
         # Verify it updated not added on top
-        profile.refresh_from_db()
-        assert profile.training_goal == self.goal_muscle_mass
-        assert profile.training_goal != self.goal_strength
+        assert self.client.training_goal == self.goal_muscle_mass
+        assert self.client.training_goal != self.goal_strength
 
     def test_trainer_constraints_many_selections(self):
         user = User.objects.create(
             email=TEST_EMAILS["trainer"], password=TEST_PASSWORD, is_trainer=True
         )
 
-        profile = user.trainer_profile
+        self.trainer_a.specialisations.add(self.goal_strength, self.goal_muscle_mass)
 
-        profile.specialisations.add(self.goal_strength, self.goal_muscle_mass)
+        self.trainer_a.accepted_experience_levels.add(
+            self.level_begin, self.level_inter
+        )
 
-        profile.accepted_experience_levels.add(self.level_begin, self.level_inter)
+        self.trainer_a.save()
 
-        profile.save()
+        assert self.trainer_a.specialisations.count() == 2
+        assert self.trainer_a.accepted_experience_levels.count() == 2
 
-        assert profile.specialisations.count() == 2
-        assert profile.accepted_experience_levels.count() == 2
-
-        assert self.goal_strength in profile.specialisations.all()
-        assert self.level_begin in profile.accepted_experience_levels.all()
+        assert self.goal_strength in self.trainer_a.specialisations.all()
+        assert self.level_begin in self.trainer_a.accepted_experience_levels.all()
 
     def test_matching_logic(self):
         """
@@ -100,34 +93,25 @@ class TestMatchingConstraints:
         """
 
         # Trainer One: Strength and Beginner
-        t1 = User.objects.create(
-            email=TEST_EMAILS["trainer"], password=TEST_PASSWORD, is_trainer=True
-        ).trainer_profile
-        t1.specialisations.add(self.goal_strength)
-        t1.accepted_experience_levels.add(self.level_begin)
+        self.trainer_a.specialisations.add(self.goal_strength)
+        self.trainer_a.accepted_experience_levels.add(self.level_begin)
 
         # Trainer Two: Muscle Mass and Beginner
-        t2 = User.objects.create(
-            email=TEST_EMAILS["add_trainer"], password=TEST_PASSWORD, is_trainer=True
-        ).trainer_profile
-        t2.specialisations.add(self.goal_muscle_mass)
-        t2.accepted_experience_levels.add(self.level_begin)
+        self.trainer_b.specialisations.add(self.goal_muscle_mass)
+        self.trainer_b.accepted_experience_levels.add(self.level_begin)
 
         # Client: Strength and Beginner
-        c = User.objects.create(
-            email=TEST_EMAILS["client"], password=TEST_PASSWORD, is_client=True
-        ).client_profile
-        c.training_goal = self.goal_strength
-        c.experience_level = self.level_begin
+        self.client.training_goal = self.goal_strength
+        self.client.experience_level = self.level_begin
 
         matches = TrainerProfile.objects.filter(
-            specialisations=c.training_goal,
-            accepted_experience_levels=c.experience_level,
+            specialisations=self.client.training_goal,
+            accepted_experience_levels=self.client.experience_level,
         ).distinct()
 
         # Assertions
-        assert t1 in matches
-        assert t2 not in matches
+        assert self.trainer_a in matches
+        assert self.trainer_b not in matches
 
     def test_client_has_choice_of_trainers(self):
         """
@@ -135,39 +119,27 @@ class TestMatchingConstraints:
         """
 
         # Trainer One: Strength and Beginner
-        t1 = User.objects.create(
-            email=TEST_EMAILS["trainer"], password=TEST_PASSWORD, is_trainer=True
-        ).trainer_profile
-        t1.specialisations.add(self.goal_strength)
-        t1.accepted_experience_levels.add(self.level_begin)
+        self.trainer_a.specialisations.add(self.goal_strength)
+        self.trainer_a.accepted_experience_levels.add(self.level_begin)
 
         # Trainer Two: Also Strength and Beginner
-        t2 = User.objects.create(
-            email=TEST_EMAILS["add_trainer"], password=TEST_PASSWORD, is_trainer=True
-        ).trainer_profile
-        t2.specialisations.add(self.goal_strength)
-        t2.accepted_experience_levels.add(self.level_begin)
+        self.trainer_b.specialisations.add(self.goal_strength)
+        self.trainer_b.accepted_experience_levels.add(self.level_begin)
 
         # Trainer Three: Muscle Mass and Beginner
-        t3 = User.objects.create(
-            email=TEST_EMAILS["add_trainer2"], password=TEST_PASSWORD, is_trainer=True
-        ).trainer_profile
-        t3.specialisations.add(self.goal_muscle_mass)
-        t3.accepted_experience_levels.add(self.level_begin)
+        self.trainer_c.specialisations.add(self.goal_muscle_mass)
+        self.trainer_c.accepted_experience_levels.add(self.level_begin)
 
         # Client: Strength and Beginner
-        c = User.objects.create(
-            email=TEST_EMAILS["client"], password=TEST_PASSWORD, is_client=True
-        ).client_profile
-        c.training_goal = self.goal_strength
-        c.experience_level = self.level_begin
+        self.client.training_goal = self.goal_strength
+        self.client.experience_level = self.level_begin
 
         matches = TrainerProfile.objects.filter(
-            specialisations=c.training_goal,
-            accepted_experience_levels=c.experience_level,
+            specialisations=self.client.training_goal,
+            accepted_experience_levels=self.client.experience_level,
         ).distinct()
 
         # Assertions
-        assert t1 in matches
-        assert t2 in matches
-        assert t3 not in matches
+        assert self.trainer_a in matches
+        assert self.trainer_b in matches
+        assert self.trainer_c not in matches

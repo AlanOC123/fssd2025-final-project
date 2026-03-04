@@ -6,6 +6,7 @@ from .views import (
     MembershipStatusViewset,
     TrainerClientMembershipViewset,
     TrainingGoalViewset,
+    TrainerMatchingViewset,
 )
 
 router = DefaultRouter()
@@ -30,6 +31,11 @@ router_struct = [
         "prefix": r"training-goals",
         "viewset": TrainingGoalViewset,
         "basename": "training_goals",
+    },
+    {
+        "prefix": r"find-trainers",
+        "viewset": TrainerMatchingViewset,
+        "basename": "find_trainers",
     },
 ]
 

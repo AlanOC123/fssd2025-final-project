@@ -36,6 +36,7 @@ class TestProgramLogic:
             trainer=t_user.trainer_profile,
             client=c_user.client_profile,
             status=self.status,
+            is_active=False,
         )
 
         # Create the phases

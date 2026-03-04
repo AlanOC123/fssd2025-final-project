@@ -36,6 +36,7 @@ jsonschema-specifications==2025.9.1
 markdown-it-py==4.0.0
 MarkupSafe==3.0.3
 mdurl==0.1.2
+model-bakery==1.23.3
 mypy_extensions==1.1.0
 nodeenv==1.10.0
 oauthlib==3.3.1

@@ -1,0 +1,8 @@
+#!/bin/bash
+# Usage: ./scripts/clear-cache
+# Example: ./scripts/clear-cache
+
+# Ensure the script stops on errors
+set -e
+
+docker system prune -a -f

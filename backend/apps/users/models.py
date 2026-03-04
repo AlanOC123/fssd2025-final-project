@@ -103,6 +103,9 @@ class CustomUser(ApexModel, AbstractBaseUser, PermissionsMixin):
 
         super().save(*args, **kwargs)
 
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
     def __str__(self) -> str:
         return self.email
 
@@ -187,24 +190,17 @@ class TrainerClientMembership(ApexModel):
         related_name="memberships",
     )
 
-    def save(self, *args, **kwargs):
-        if self.status and self.status.status_name == "ACTIVE":
-            active_exists = (
-                TrainerClientMembership.objects.filter(
-                    client=self.client, status__status_name="ACTIVE"
-                )
-                .exclude(id=self.id)
-                .exists()
-            )
-
-            if active_exists:
-                raise ValidationError("Client already has an trainer")
-
-        super().save(*args, **kwargs)
+    is_active = models.BooleanField(default=False)
 
     class Meta:
+        ordering = ["-updated_at"]
+
         # Ensures unique check of clients and trainers
         unique_together = ("trainer", "client")
 
+    def save(self, *args, **kwargs):
+        self.is_active = self.status is not None and self.status.status_name == "ACTIVE"
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
-        return f"Trainer: {self.trainer.user.email}. Client: {self.client.user.email}"
+        return f"Trainer: {self.trainer.user.email}. Client: {self.client.user.email}. Status: {self.is_active}"

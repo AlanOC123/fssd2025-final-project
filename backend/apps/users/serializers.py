@@ -1,7 +1,6 @@
+from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
-from dj_rest_auth.registration.serializers import RegisterSerializer
 
 from .models import (
     ClientProfile,
@@ -43,6 +42,12 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 
 
 class TrainerProfileSerializer(serializers.ModelSerializer):
+    """Used for matching trainers with clients"""
+
+    first_name = serializers.CharField(source="user.first_name", read_only=True)
+    last_name = serializers.CharField(source="user.last_name", read_only=True)
+    email = serializers.CharField(source="user.email", read_only=True)
+
     specialisations = TrainingGoalSerializer(many=True, read_only=True)
     accepted_experience_levels = ExperienceLevelSerializer(many=True, read_only=True)
 
@@ -50,8 +55,13 @@ class TrainerProfileSerializer(serializers.ModelSerializer):
         model = TrainerProfile
         fields = [
             "id",
+            "first_name",
+            "last_name",
+            "email",
             "specialisations",
             "accepted_experience_levels",
+            "company",
+            "website",
         ]
 
 
@@ -113,10 +123,55 @@ class CustomRegisterSerializer(RegisterSerializer):
 
 
 class TrainerClientMembershipSerializer(serializers.ModelSerializer):
-    trainer = TrainerProfileSerializer(read_only=True)
-    client = ClientProfileSerializer(read_only=True)
-    status = MembershipStatusSerializer(read_only=True)
+    trainer_name = serializers.CharField(
+        source="trainer.user.get_full_name", read_only=True
+    )
+    client_name = serializers.CharField(
+        source="client.user.get_full_name", read_only=True
+    )
+    status_name = serializers.CharField(source="status.status_name", read_only=True)
+
+    trainer_id = serializers.PrimaryKeyRelatedField(
+        queryset=TrainerProfile.objects.all(),
+        source="trainer",
+        required=False,
+    )
+
+    status_id = serializers.PrimaryKeyRelatedField(
+        queryset=MembershipStatus.objects.all(),
+        source="status",
+        required=False,
+    )
 
     class Meta:
         model = TrainerClientMembership
-        fields = ["id", "trainer", "status", "client"]
+
+        fields = [
+            "id",
+            "trainer_name",
+            "client_name",
+            "status_name",
+            "trainer_id",
+            "status_id",
+            "created_at",
+            "updated_at",
+        ]
+
+        read_only_fields = ["created_at", "updated_at"]
+
+    def validate(self, attrs):
+        if self.instance is None:
+            user = self.context["request"].user
+
+            if user.is_client:
+                has_active = TrainerClientMembership.objects.filter(
+                    client=user.client_profile,
+                    status__status_name__in=["ACTIVE", "PENDING_TRAINER_REVIEW"],
+                ).exists()
+
+                if has_active:
+                    raise serializers.ValidationError(
+                        "You already have an active or pending trainer request."
+                    )
+
+        return attrs
