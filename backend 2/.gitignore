@@ -1,0 +1,23 @@
+# --- Python & Django ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+.DS_Store
+.coverage
+htmlcov/
+
+# --- Environment & Security ---
+.env
+.venv/
+venv/
+env/
+
+# --- IDE Settings ---
+.vscode/
+.idea/
+
+# --- Static & Media ---
+staticfiles/
+media/

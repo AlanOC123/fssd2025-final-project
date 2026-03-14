@@ -1,7 +1,12 @@
+from decimal import Decimal
+
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from apps.exercises.models import Exercise
 from apps.exercises.serializers import ExerciseSerializer
-from apps.programs.serializers import ProgramPhaseSerializer
+from apps.programs.models import ProgramPhase
+from core.serializers import ApexSerializer
 
 from .models import (
     Workout,
@@ -12,129 +17,279 @@ from .models import (
     WorkoutSetCompletionRecord,
 )
 
-
-class WorkoutSetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = WorkoutSet
-        fields = [
-            "id",
-            "reps_prescribed",
-            "weight_prescribed",
-            "set_order",
-        ]
+User = get_user_model()
 
 
-class WorkoutExerciseSerializer(serializers.ModelSerializer):
-    exercise = ExerciseSerializer(read_only=True)
-    sets = WorkoutSetSerializer(read_only=True, many=True)
-
-    class Meta:
-        model = WorkoutExercise
-        fields = ["id", "sets_prescribed", "order", "exercise", "sets"]
+# Prescriptive: Write serializers (trainer) ─
 
 
-class WorkoutSerializer(serializers.ModelSerializer):
-    program_phase = ProgramPhaseSerializer(read_only=True)
-    exercises = WorkoutExerciseSerializer(read_only=True, many=True)
-
-    class Meta:
-        model = Workout
-        fields = [
-            "id",
-            "workout_name",
-            "estimated_duration_s",
-            "scheduled_for",
-            "trainer_notes",
-            "program_phase",
-            "exercises",
-        ]
-
-
-class WorkoutSetCompletionRecordSerializer(serializers.ModelSerializer):
-    workout_set = WorkoutSetSerializer(read_only=True)
-
-    workout_set_id = serializers.PrimaryKeyRelatedField(
-        queryset=WorkoutSet.objects.all(), source="workout_set", write_only=True
-    )
-
-    exercise_completion_record_id = serializers.PrimaryKeyRelatedField(
-        queryset=WorkoutExerciseCompletionRecord.objects.all(),
-        source="exercise_completion_record",
+class WorkoutWriteSerializer(ApexSerializer):
+    program_phase_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProgramPhase.objects.all(),
+        source="program_phase",
         write_only=True,
     )
 
-    class Meta:
-        model = WorkoutSetCompletionRecord
-        fields = [
-            "id",
-            "reps_completed",
-            "weight_completed",
-            "completed_at",
-            "is_skipped",
-            "workout_set",
-            "workout_set_id",
-            "reps_in_reserve",
-            "exercise_completion_record_id",
+    class Meta(ApexSerializer.Meta):
+        model = Workout
+        fields = ApexSerializer.Meta.fields + [
+            "program_phase_id",
+            "workout_name",
+            "planned_date",
         ]
 
-        extra_kwargs = {"id": {"read_only": False, "required": False}}
+
+class WorkoutExerciseWriteSerializer(ApexSerializer):
+    workout_id = serializers.PrimaryKeyRelatedField(
+        queryset=Workout.objects.all(),
+        source="workout",
+        write_only=True,
+    )
+    exercise_id = serializers.PrimaryKeyRelatedField(
+        queryset=Exercise.objects.all(),
+        source="exercise",
+        write_only=True,
+    )
+
+    class Meta(ApexSerializer.Meta):
+        model = WorkoutExercise
+        fields = ApexSerializer.Meta.fields + [
+            "workout_id",
+            "exercise_id",
+            "order",
+            "sets_prescribed",
+            "trainer_notes",
+        ]
 
 
-class WorkoutExerciseCompletionRecordSerializer(serializers.ModelSerializer):
-    completed_sets = WorkoutSetCompletionRecordSerializer(read_only=True, many=True)
-
-    workout_exercise = WorkoutExerciseSerializer(read_only=True)
+class WorkoutSetWriteSerializer(ApexSerializer):
     workout_exercise_id = serializers.PrimaryKeyRelatedField(
         queryset=WorkoutExercise.objects.all(),
         source="workout_exercise",
         write_only=True,
     )
 
-    workout_completion_record_id = serializers.PrimaryKeyRelatedField(
-        queryset=WorkoutCompletionRecord.objects.all(),
-        source="workout_completion_record",
-        write_only=True,
-    )
-
-    class Meta:
-        model = WorkoutExerciseCompletionRecord
-        fields = [
-            "id",
-            "completed_sets",
-            "workout_exercise",
+    class Meta(ApexSerializer.Meta):
+        model = WorkoutSet
+        fields = ApexSerializer.Meta.fields + [
             "workout_exercise_id",
-            "workout_completion_record_id",
-            "completed_at",
-            "is_skipped",
-            "difficulty_rating",
+            "set_order",
+            "reps_prescribed",
+            "weight_prescribed",
         ]
 
-        extra_kwargs = {"id": {"read_only": False, "required": False}}
+    def validate_weight_prescribed(self, value):
+        if value < Decimal("0.00"):
+            raise serializers.ValidationError("weight_prescribed cannot be negative.")
+        return value
 
 
-class WorkoutCompletionRecordSerializer(serializers.ModelSerializer):
-    workout = WorkoutSerializer(read_only=True)
+# Prescriptive: Read serializers
+
+
+class WorkoutSetReadSerializer(ApexSerializer):
+    class Meta(ApexSerializer.Meta):
+        model = WorkoutSet
+        fields = ApexSerializer.Meta.fields + [
+            "set_order",
+            "reps_prescribed",
+            "weight_prescribed",
+        ]
+        read_only_fields = fields
+
+
+class WorkoutExerciseReadSerializer(ApexSerializer):
+    # Lean exercise summary — client doesn't need instructions mid-session
+    exercise = ExerciseSerializer(read_only=True)
+    sets = WorkoutSetReadSerializer(many=True, read_only=True)
+
+    class Meta(ApexSerializer.Meta):
+        model = WorkoutExercise
+        fields = ApexSerializer.Meta.fields + [
+            "order",
+            "sets_prescribed",
+            "trainer_notes",
+            "exercise",
+            "sets",
+        ]
+        read_only_fields = fields
+
+
+class WorkoutReadSerializer(ApexSerializer):
+    program_phase_id = serializers.UUIDField(
+        source="program_phase.id",
+        read_only=True,
+    )
+    exercises = WorkoutExerciseReadSerializer(many=True, read_only=True)
+
+    class Meta(ApexSerializer.Meta):
+        model = Workout
+        fields = ApexSerializer.Meta.fields + [
+            "workout_name",
+            "planned_date",
+            "program_phase_id",
+            "exercises",
+        ]
+        read_only_fields = fields
+
+
+class WorkoutListSerializer(ApexSerializer):
+    """
+    Lightweight list view — no nested exercises.
+    Client uses this to pick a workout; WorkoutReadSerializer
+    is fetched on detail to get the full exercise/set tree.
+    """
+
+    program_phase_id = serializers.UUIDField(
+        source="program_phase.id",
+        read_only=True,
+    )
+
+    class Meta(ApexSerializer.Meta):
+        model = Workout
+        fields = ApexSerializer.Meta.fields + [
+            "workout_name",
+            "planned_date",
+            "program_phase_id",
+        ]
+        read_only_fields = fields
+
+
+# Completion: Write serializers (client) ─
+
+
+class StartWorkoutSerializer(serializers.Serializer):
     workout_id = serializers.PrimaryKeyRelatedField(
-        queryset=Workout.objects.all(), source="workout", write_only=True
+        queryset=Workout.objects.all(),
+        source="workout",
     )
 
-    exercise_records = WorkoutExerciseCompletionRecordSerializer(
-        read_only=True, many=True
+
+class StartExerciseSerializer(serializers.Serializer):
+    workout_exercise_id = serializers.PrimaryKeyRelatedField(
+        queryset=WorkoutExercise.objects.all(),
+        source="workout_exercise",
+    )
+    session_id = serializers.PrimaryKeyRelatedField(
+        queryset=WorkoutCompletionRecord.objects.all(),
+        source="session",
     )
 
-    class Meta:
-        model = WorkoutCompletionRecord
-        fields = [
-            "id",
-            "time_taken_s",
-            "completed_at",
+
+class CompleteSetSerializer(serializers.Serializer):
+    workout_set_id = serializers.PrimaryKeyRelatedField(
+        queryset=WorkoutSet.objects.all(),
+        source="workout_set",
+    )
+    exercise_record_id = serializers.PrimaryKeyRelatedField(
+        queryset=WorkoutExerciseCompletionRecord.objects.all(),
+        source="exercise_record",
+    )
+    reps_completed = serializers.IntegerField(min_value=1)
+    weight_completed = serializers.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        min_value=Decimal("0.00"),
+    )
+    difficulty_rating = serializers.IntegerField(
+        min_value=1,
+        max_value=10,
+        required=False,
+        allow_null=True,
+    )
+    reps_in_reserve = serializers.IntegerField(
+        min_value=0,
+        required=False,
+        allow_null=True,
+    )
+
+
+class SkipSetSerializer(serializers.Serializer):
+    workout_set_id = serializers.PrimaryKeyRelatedField(
+        queryset=WorkoutSet.objects.all(),
+        source="workout_set",
+    )
+    exercise_record_id = serializers.PrimaryKeyRelatedField(
+        queryset=WorkoutExerciseCompletionRecord.objects.all(),
+        source="exercise_record",
+    )
+
+
+# Completion: Read serializers
+
+
+class WorkoutSetCompletionReadSerializer(ApexSerializer):
+    workout_set_id = serializers.UUIDField(
+        source="workout_set.id",
+        read_only=True,
+    )
+    reps_diff = serializers.IntegerField(read_only=True)
+    weight_diff = serializers.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        read_only=True,
+        allow_null=True,
+    )
+
+    class Meta(ApexSerializer.Meta):
+        model = WorkoutSetCompletionRecord
+        fields = ApexSerializer.Meta.fields + [
+            "workout_set_id",
             "is_skipped",
-            "workout",
+            "completed_at",
+            "reps_completed",
+            "weight_completed",
+            "difficulty_rating",
+            "reps_in_reserve",
+            "reps_diff",
+            "weight_diff",
+        ]
+        read_only_fields = fields
+
+
+class WorkoutExerciseCompletionReadSerializer(ApexSerializer):
+    workout_exercise_id = serializers.UUIDField(
+        source="workout_exercise.id",
+        read_only=True,
+    )
+    set_records = WorkoutSetCompletionReadSerializer(many=True, read_only=True)
+
+    class Meta(ApexSerializer.Meta):
+        model = WorkoutExerciseCompletionRecord
+        fields = ApexSerializer.Meta.fields + [
+            "workout_exercise_id",
+            "is_skipped",
+            "started_at",
+            "completed_at",
+            "set_records",
+        ]
+        read_only_fields = fields
+
+
+class WorkoutCompletionReadSerializer(ApexSerializer):
+    workout_id = serializers.UUIDField(
+        source="workout.id",
+        read_only=True,
+    )
+    client_id = serializers.UUIDField(
+        source="client.id",
+        read_only=True,
+    )
+    exercise_records = WorkoutExerciseCompletionReadSerializer(
+        many=True,
+        read_only=True,
+    )
+    duration_s = serializers.IntegerField(read_only=True, allow_null=True)
+
+    class Meta(ApexSerializer.Meta):
+        model = WorkoutCompletionRecord
+        fields = ApexSerializer.Meta.fields + [
             "workout_id",
+            "client_id",
+            "is_skipped",
+            "started_at",
+            "completed_at",
+            "duration_s",
             "exercise_records",
         ]
-
-        extra_kwargs = {"id": {"read_only": False, "required": False}}
-
-    def create(self, validated_data):
-        return super().create(validated_data)
+        read_only_fields = fields

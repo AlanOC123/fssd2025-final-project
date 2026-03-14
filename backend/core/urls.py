@@ -13,4 +13,5 @@ urlpatterns = [
     path(f"{api_base}/programs/", include("apps.programs.urls")),
     path(f"{api_base}/biology/", include("apps.biology.urls")),
     path(f"{api_base}/exercises/", include("apps.exercises.urls")),
+    path(f"{api_base}/workouts/", include("apps.workouts.urls")),
 ]

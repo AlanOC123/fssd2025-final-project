@@ -2,10 +2,11 @@ from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from core.serializers import ApexSerializer, LabelLookupSerializer
+
 from .models import (
     ClientProfile,
     ExperienceLevel,
-    MembershipStatus,
     TrainerClientMembership,
     TrainerProfile,
     TrainingGoal,
@@ -14,66 +15,107 @@ from .models import (
 User = get_user_model()
 
 
-class TrainingGoalSerializer(serializers.ModelSerializer):
+class UserIdSerializer(serializers.ModelSerializer):
     class Meta:
+        model = User
+        fields = ["id"]
+        read_only_fields = fields
+
+
+class TrainingGoalSerializer(LabelLookupSerializer):
+
+    class Meta(LabelLookupSerializer.Meta):
         model = TrainingGoal
-        fields = ["id", "goal_name"]
 
 
-class ExperienceLevelSerializer(serializers.ModelSerializer):
-    class Meta:
+class ExperienceLevelSerializer(LabelLookupSerializer):
+    class Meta(LabelLookupSerializer.Meta):
         model = ExperienceLevel
-        fields = ["id", "level_name"]
 
 
-class MembershipStatusSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MembershipStatus
-        fields = ["id", "status_name"]
+class ClientProfileSerializer(ApexSerializer):
+    goal = TrainingGoalSerializer(read_only=True)
+    level = ExperienceLevelSerializer(read_only=True)
 
+    goal_id = serializers.PrimaryKeyRelatedField(
+        queryset=TrainingGoal.objects.all(),
+        source="goal",
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
 
-class ClientProfileSerializer(serializers.ModelSerializer):
-    training_goal = TrainingGoalSerializer(read_only=True)
-    experience_level = ExperienceLevelSerializer(read_only=True)
+    level_id = serializers.PrimaryKeyRelatedField(
+        queryset=ExperienceLevel.objects.all(),
+        source="level",
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
 
-    class Meta:
+    class Meta(ApexSerializer.Meta):
         model = ClientProfile
-        fields = ["id", "training_goal", "experience_level"]
+        fields = ApexSerializer.Meta.fields + ["goal", "level", "goal_id", "level_id"]
+        read_only_fields = ApexSerializer.Meta.read_only_fields + ["goal", "level"]
 
 
-class TrainerProfileSerializer(serializers.ModelSerializer):
+class TrainerProfileSerializer(ApexSerializer):
     """Used for matching trainers with clients"""
 
     first_name = serializers.CharField(source="user.first_name", read_only=True)
     last_name = serializers.CharField(source="user.last_name", read_only=True)
     email = serializers.CharField(source="user.email", read_only=True)
 
-    specialisations = TrainingGoalSerializer(many=True, read_only=True)
-    accepted_experience_levels = ExperienceLevelSerializer(many=True, read_only=True)
+    accepted_goals = TrainingGoalSerializer(many=True, read_only=True)
+    accepted_levels = ExperienceLevelSerializer(many=True, read_only=True)
 
-    class Meta:
+    accepted_goal_ids = serializers.PrimaryKeyRelatedField(
+        queryset=TrainingGoal.objects.all(),
+        source="accepted_goals",
+        write_only=True,
+        required=False,
+        many=True,
+    )
+
+    accepted_level_ids = serializers.PrimaryKeyRelatedField(
+        queryset=ExperienceLevel.objects.all(),
+        source="accepted_levels",
+        write_only=True,
+        required=False,
+        many=True,
+    )
+
+    class Meta(ApexSerializer.Meta):
         model = TrainerProfile
-        fields = [
-            "id",
+        fields = ApexSerializer.Meta.fields + [
             "first_name",
             "last_name",
             "email",
-            "specialisations",
-            "accepted_experience_levels",
+            "accepted_goals",
+            "accepted_levels",
+            "accepted_goal_ids",
+            "accepted_level_ids",
             "company",
             "website",
         ]
 
+        read_only_fields = ApexSerializer.Meta.read_only_fields + [
+            "first_name",
+            "last_name",
+            "email",
+            "accepted_goals",
+            "accepted_levels",
+        ]
 
-class CustomUserSerializer(serializers.ModelSerializer):
+
+class CustomUserSerializer(ApexSerializer):
     profile = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
 
-    class Meta:
+    class Meta(ApexSerializer.Meta):
         model = User
-        fields = [
-            "id",
+        fields = ApexSerializer.Meta.fields + [
             "email",
             "first_name",
             "last_name",
@@ -84,30 +126,26 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "profile",
         ]
 
-        read_only_fields = ["id"]
-
     def get_full_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}"
+        return obj.get_full_name()
 
     def get_role(self, obj):
+        if obj.is_superuser:
+            return "admin"
         if obj.is_trainer:
             return "trainer"
         if obj.is_client:
             return "client"
-        if obj.is_superuser:
-            return "admin"
-
         return "unknown"
 
     def get_profile(self, obj):
         if obj.is_client and hasattr(obj, "client_profile"):
             return ClientProfileSerializer(obj.client_profile).data
 
-        elif obj.is_trainer and hasattr(obj, "trainer_profile"):
+        if obj.is_trainer and hasattr(obj, "trainer_profile"):
             return TrainerProfileSerializer(obj.trainer_profile).data
 
-        else:
-            return None
+        return None
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -117,61 +155,65 @@ class CustomRegisterSerializer(RegisterSerializer):
         data = super().get_cleaned_data()
 
         if "username" in data:
-            del data["username"]
+            data.pop("username", None)
 
         return data
 
 
-class TrainerClientMembershipSerializer(serializers.ModelSerializer):
-    trainer_name = serializers.CharField(
-        source="trainer.user.get_full_name", read_only=True
-    )
-    client_name = serializers.CharField(
-        source="client.user.get_full_name", read_only=True
-    )
-    status_name = serializers.CharField(source="status.status_name", read_only=True)
+class TrainerClientMembershipSerializer(ApexSerializer):
+    trainer_name = serializers.SerializerMethodField()
+    client_name = serializers.SerializerMethodField()
+
+    status_code = serializers.CharField(source="status.code", read_only=True)
+    status_label = serializers.CharField(source="status.label", read_only=True)
 
     trainer_id = serializers.PrimaryKeyRelatedField(
         queryset=TrainerProfile.objects.all(),
         source="trainer",
         required=False,
+        write_only=True,
     )
 
-    status_id = serializers.PrimaryKeyRelatedField(
-        queryset=MembershipStatus.objects.all(),
-        source="status",
-        required=False,
-    )
+    status_id = serializers.UUIDField(source="status.id", read_only=True)
 
-    class Meta:
+    class Meta(ApexSerializer.Meta):
         model = TrainerClientMembership
 
-        fields = [
-            "id",
+        fields = ApexSerializer.Meta.fields + [
             "trainer_name",
             "client_name",
-            "status_name",
-            "trainer_id",
+            "status_code",
+            "status_label",
             "status_id",
-            "created_at",
-            "updated_at",
+            "trainer_id",
+            "requested_at",
+            "responded_at",
+            "started_at",
+            "ended_at",
         ]
 
-        read_only_fields = ["created_at", "updated_at"]
+        read_only_fields = ApexSerializer.Meta.read_only_fields + [
+            "trainer_name",
+            "client_name",
+            "status_id",
+            "status_code",
+            "status_label",
+            "requested_at",
+            "responded_at",
+            "started_at",
+            "ended_at",
+        ]
 
-    def validate(self, attrs):
-        if self.instance is None:
-            user = self.context["request"].user
+    def get_trainer_name(self, obj):
+        name = obj.trainer.user.get_full_name()
+        return name if name else obj.trainer.user.email
 
-            if user.is_client:
-                has_active = TrainerClientMembership.objects.filter(
-                    client=user.client_profile,
-                    status__status_name__in=["ACTIVE", "PENDING_TRAINER_REVIEW"],
-                ).exists()
+    def get_client_name(self, obj):
+        name = obj.client.user.get_full_name()
+        return name if name else obj.client.user.email
 
-                if has_active:
-                    raise serializers.ValidationError(
-                        "You already have an active or pending trainer request."
-                    )
 
-        return attrs
+class MembershipRequestSerializer(serializers.Serializer):
+    trainer_id = serializers.PrimaryKeyRelatedField(
+        queryset=TrainerProfile.objects.all(),
+    )

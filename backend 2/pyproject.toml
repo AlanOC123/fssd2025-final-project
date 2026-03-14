@@ -1,0 +1,30 @@
+# source_code/backend/pyproject.toml
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+
+target-version = "py312"
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# I = Isort (Sort imports)
+# N = Pep8-naming (Enforce naming conventions)
+# UP = Pyupgrade (Upgrade legacy python syntax automatically)
+# DJ = Django specific linting rules!
+select = ["E", "F", "I", "N", "UP", "DJ"]
+ignore = []
+
+# Allow fix for all enabled rules (when `--fix` is provided).
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+known-first-party = [] # Change these to match your Django app names

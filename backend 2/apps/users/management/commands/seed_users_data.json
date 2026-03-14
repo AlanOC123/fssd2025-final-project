@@ -1,0 +1,17 @@
+{
+    "experience_level": ["Beginner", "Intermediate", "Advanced", "Elite"],
+    "training_goal": [
+        "Strength",
+        "Muscle Gain",
+        "Muscle Endurance",
+        "Recovery"
+    ],
+    "membership_status": [
+        "PENDING_TRAINER_REVIEW",
+        "PENDING_CLIENT_CONFIRMATION",
+        "ACTIVE",
+        "REJECTED",
+        "TRAINER_DISSOLVED",
+        "CLIENT_DISSOLVED"
+    ]
+}

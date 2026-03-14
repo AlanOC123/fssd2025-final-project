@@ -1,79 +1,342 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from apps.users.models import ExperienceLevel, TrainerClientMembership, TrainingGoal
 from apps.users.serializers import (
     ExperienceLevelSerializer,
-    TrainerClientMembershipSerializer,
     TrainingGoalSerializer,
 )
+from core.serializers import ApexSerializer, LabelLookupSerializer
 
-from apps.users.models import TrainingGoal, ExperienceLevel, TrainerClientMembership
+from .models import (
+    Program,
+    ProgramPhase,
+    ProgramPhaseOption,
+    ProgramPhaseStatusOption,
+    ProgramStatusOption,
+)
 
-from .models import Program, ProgramPhase, ProgramPhaseOption
+User = get_user_model()
 
 
-class ProgramPhaseOptionSerializer(serializers.ModelSerializer):
-    class Meta:
+class ProgramPhaseOptionSerializer(LabelLookupSerializer):
+    class Meta(LabelLookupSerializer.Meta):
         model = ProgramPhaseOption
-        fields = ["id", "phase_name", "order_index", "default_duration", "description"]
+        fields = LabelLookupSerializer.Meta.fields + [
+            "default_duration_days",
+            "default_duration_weeks",
+        ]
+        read_only_fields = fields
 
 
-class ProgramPhaseSerializer(serializers.ModelSerializer):
+class ProgramStatusOptionSerializer(LabelLookupSerializer):
+    class Meta(LabelLookupSerializer.Meta):
+        model = ProgramStatusOption
+
+
+class ProgramPhaseStatusOptionSerializer(LabelLookupSerializer):
+    class Meta(LabelLookupSerializer.Meta):
+        model = ProgramPhaseStatusOption
+
+
+class ProgramPhaseWriteSerializer(ApexSerializer):
     program_id = serializers.PrimaryKeyRelatedField(
-        queryset=Program.objects.all(), source="program", write_only=True
+        queryset=Program.objects.all(),
+        source="program",
+        write_only=True,
     )
 
-    phase_option = ProgramPhaseOptionSerializer(read_only=True)
     phase_option_id = serializers.PrimaryKeyRelatedField(
         queryset=ProgramPhaseOption.objects.all(),
         source="phase_option",
         write_only=True,
     )
 
-    class Meta:
+    class Meta(ApexSerializer.Meta):
         model = ProgramPhase
-        fields = [
-            "id",
-            "is_active",
-            "is_completed",
-            "completed_at",
-            "custom_duration",
-            "phase_option",
-            "phase_option_id",
+        fields = ApexSerializer.Meta.fields + [
             "program_id",
+            "phase_option_id",
+            "phase_name",
+            "phase_goal",
+            "sequence_order",
+            "trainer_notes",
+            "client_notes",
+            "planned_start_date",
+            "planned_end_date",
         ]
 
+    def validate(self, attrs):
+        planned_start_date = attrs.get("planned_start_date")
+        planned_end_date = attrs.get("planned_end_date")
 
-class ProgramSerializer(serializers.ModelSerializer):
-    training_goal = TrainingGoalSerializer(read_only=True)
-    training_goal_id = serializers.PrimaryKeyRelatedField(
-        queryset=TrainingGoal.objects.all(), source="training_goal", write_only=True
+        if planned_start_date and planned_end_date:
+            if planned_start_date >= planned_end_date:
+                raise serializers.ValidationError(
+                    "Planned start date must be before planned end date."
+                )
+
+        return attrs
+
+
+class ProgramPhaseReadSerializer(ApexSerializer):
+    phase_option = ProgramPhaseOptionSerializer(read_only=True)
+    status = ProgramPhaseStatusOptionSerializer(read_only=True)
+
+    program_id = serializers.UUIDField(source="program.id", read_only=True)
+
+    created_by_trainer_id = serializers.UUIDField(
+        source="created_by_trainer.id",
+        read_only=True,
+        allow_null=True,
+    )
+    last_edited_by_id = serializers.UUIDField(
+        source="last_edited_by.id",
+        read_only=True,
+        allow_null=True,
     )
 
-    experience_level = ExperienceLevelSerializer(read_only=True)
+    duration_days = serializers.IntegerField(read_only=True)
+    duration_weeks = serializers.IntegerField(read_only=True)
+
+    class Meta(ApexSerializer.Meta):
+        model = ProgramPhase
+        fields = ApexSerializer.Meta.fields + [
+            "program_id",
+            "phase_option",
+            "phase_name",
+            "phase_goal",
+            "sequence_order",
+            "status",
+            "trainer_notes",
+            "client_notes",
+            "planned_start_date",
+            "planned_end_date",
+            "actual_start_date",
+            "actual_end_date",
+            "started_at",
+            "completed_at",
+            "created_by_trainer_id",
+            "last_edited_by_id",
+            "skipped_at",
+            "skipped_reason",
+            "archived_at",
+            "archived_reason",
+            "duration_days",
+            "duration_weeks",
+        ]
+        read_only_fields = fields
+
+
+class ProgramPhaseListSerializer(ApexSerializer):
+    phase_option = ProgramPhaseOptionSerializer(read_only=True)
+    status = ProgramPhaseStatusOptionSerializer(read_only=True)
+
+    duration_days = serializers.IntegerField(read_only=True)
+    duration_weeks = serializers.IntegerField(read_only=True)
+
+    class Meta(ApexSerializer.Meta):
+        model = ProgramPhase
+        fields = ApexSerializer.Meta.fields + [
+            "phase_option",
+            "phase_name",
+            "phase_goal",
+            "sequence_order",
+            "status",
+            "planned_start_date",
+            "planned_end_date",
+            "actual_start_date",
+            "actual_end_date",
+            "duration_days",
+            "duration_weeks",
+        ]
+        read_only_fields = fields
+
+
+class ProgramPhaseReasonSerializer(serializers.Serializer):
+    reason = serializers.CharField(
+        max_length=200,
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+    )
+
+
+class ProgramWriteSerializer(ApexSerializer):
+    trainer_client_membership_id = serializers.PrimaryKeyRelatedField(
+        queryset=TrainerClientMembership.objects.all(),
+        source="trainer_client_membership",
+        write_only=True,
+    )
+
     experience_level_id = serializers.PrimaryKeyRelatedField(
         queryset=ExperienceLevel.objects.all(),
         source="experience_level",
         write_only=True,
     )
 
-    trainer_client_membership_id = serializers.PrimaryKeyRelatedField(
-        queryset=TrainerClientMembership.objects.all(),
-        source="trainer_client_membership",
+    training_goal_id = serializers.PrimaryKeyRelatedField(
+        queryset=TrainingGoal.objects.all(),
+        source="training_goal",
+        write_only=True,
     )
 
-    phases = ProgramPhaseSerializer(many=True, read_only=True)
-    calculated_duration = serializers.IntegerField(read_only=True)
-
-    class Meta:
+    class Meta(ApexSerializer.Meta):
         model = Program
-        fields = [
-            "id",
+        fields = ApexSerializer.Meta.fields + [
             "program_name",
-            "training_goal",
-            "training_goal_id",
-            "experience_level",
-            "experience_level_id",
-            "phases",
-            "calculated_duration",
             "trainer_client_membership_id",
+            "experience_level_id",
+            "training_goal_id",
         ]
+
+
+class ProgramListSerializer(ApexSerializer):
+    trainer_client_membership_id = serializers.UUIDField(
+        source="trainer_client_membership.id",
+        read_only=True,
+    )
+    experience_level = ExperienceLevelSerializer(read_only=True)
+    training_goal = TrainingGoalSerializer(read_only=True)
+    status = ProgramStatusOptionSerializer(read_only=True)
+
+    planned_start_date = serializers.DateField(read_only=True)
+    planned_end_date = serializers.DateField(read_only=True)
+    actual_start_date = serializers.DateField(read_only=True)
+    actual_end_date = serializers.DateField(read_only=True)
+
+    program_duration_days = serializers.IntegerField(read_only=True)
+    program_duration_weeks = serializers.IntegerField(read_only=True)
+    has_created_phases = serializers.BooleanField(read_only=True)
+    number_of_completed_phases = serializers.IntegerField(read_only=True)
+    number_of_skipped_phases = serializers.IntegerField(read_only=True)
+    number_of_archived_phases = serializers.IntegerField(read_only=True)
+    remaining_phases = ProgramPhaseListSerializer(many=True, read_only=True)
+    all_phases_finished = serializers.BooleanField(read_only=True)
+
+    class Meta(ApexSerializer.Meta):
+        model = Program
+        fields = ApexSerializer.Meta.fields + [
+            "program_name",
+            "version",
+            "trainer_client_membership_id",
+            "experience_level",
+            "training_goal",
+            "status",
+            "planned_start_date",
+            "planned_end_date",
+            "actual_start_date",
+            "actual_end_date",
+            "program_duration_days",
+            "program_duration_weeks",
+            "has_created_phases",
+            "number_of_completed_phases",
+            "number_of_skipped_phases",
+            "number_of_archived_phases",
+            "remaining_phases",
+            "all_phases_finished",
+            "submitted_for_review_at",
+            "reviewed_at",
+            "started_at",
+            "completed_at",
+            "abandoned_at",
+        ]
+        read_only_fields = fields
+
+
+class ProgramDetailSerializer(ApexSerializer):
+    trainer_client_membership_id = serializers.UUIDField(
+        source="trainer_client_membership.id",
+        read_only=True,
+    )
+    experience_level = ExperienceLevelSerializer(read_only=True)
+    training_goal = TrainingGoalSerializer(read_only=True)
+    status = ProgramStatusOptionSerializer(read_only=True)
+
+    created_by_trainer_id = serializers.UUIDField(
+        source="created_by_trainer.id",
+        read_only=True,
+        allow_null=True,
+    )
+    last_edited_by_id = serializers.UUIDField(
+        source="last_edited_by.id",
+        read_only=True,
+        allow_null=True,
+    )
+
+    planned_start_date = serializers.DateField(read_only=True)
+    planned_end_date = serializers.DateField(read_only=True)
+    actual_start_date = serializers.DateField(read_only=True)
+    actual_end_date = serializers.DateField(read_only=True)
+
+    program_duration_days = serializers.IntegerField(read_only=True)
+    program_duration_weeks = serializers.IntegerField(read_only=True)
+    has_created_phases = serializers.BooleanField(read_only=True)
+    number_of_completed_phases = serializers.IntegerField(read_only=True)
+    number_of_skipped_phases = serializers.IntegerField(read_only=True)
+    number_of_archived_phases = serializers.IntegerField(read_only=True)
+    all_phases_finished = serializers.BooleanField(read_only=True)
+
+    phases = ProgramPhaseReadSerializer(many=True, read_only=True)
+
+    class Meta(ApexSerializer.Meta):
+        model = Program
+        fields = ApexSerializer.Meta.fields + [
+            "program_name",
+            "version",
+            "trainer_client_membership_id",
+            "experience_level",
+            "training_goal",
+            "status",
+            "created_by_trainer_id",
+            "last_edited_by_id",
+            "submitted_for_review_at",
+            "reviewed_at",
+            "started_at",
+            "completed_at",
+            "abandoned_at",
+            "review_notes",
+            "completion_notes",
+            "abandonment_reason",
+            "planned_start_date",
+            "planned_end_date",
+            "actual_start_date",
+            "actual_end_date",
+            "program_duration_days",
+            "program_duration_weeks",
+            "has_created_phases",
+            "number_of_completed_phases",
+            "number_of_skipped_phases",
+            "number_of_archived_phases",
+            "all_phases_finished",
+            "phases",
+        ]
+        read_only_fields = fields
+
+
+class ProgramReviewSerializer(serializers.Serializer):
+    feedback_notes = serializers.CharField(
+        max_length=500,
+        required=False,
+        allow_blank=True,
+        trim_whitespace=True,
+    )
+    is_accepted = serializers.BooleanField(required=True)
+
+
+class ProgramCompleteSerializer(serializers.Serializer):
+    completion_notes = serializers.CharField(
+        max_length=500,
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+    )
+
+
+class ProgramAbandonSerializer(serializers.Serializer):
+    abandonment_reason = serializers.CharField(
+        max_length=200,
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+    )

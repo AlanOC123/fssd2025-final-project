@@ -3,54 +3,32 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     ExperienceLevelViewset,
-    MembershipStatusViewset,
     TrainerClientMembershipViewset,
-    TrainingGoalViewset,
     TrainerMatchingViewset,
+    TrainingGoalViewset,
 )
 
 router = DefaultRouter()
 
-router_struct = [
-    {
-        "prefix": r"experience-levels",
-        "viewset": ExperienceLevelViewset,
-        "basename": "experience_levels",
-    },
-    {
-        "prefix": r"membership-status",
-        "viewset": MembershipStatusViewset,
-        "basename": "membership_status",
-    },
-    {
-        "prefix": r"trainer-client-memberships",
-        "viewset": TrainerClientMembershipViewset,
-        "basename": "trainer_client_memberships",
-    },
-    {
-        "prefix": r"training-goals",
-        "viewset": TrainingGoalViewset,
-        "basename": "training_goals",
-    },
-    {
-        "prefix": r"find-trainers",
-        "viewset": TrainerMatchingViewset,
-        "basename": "find_trainers",
-    },
-]
-
-for route in router_struct:
-    prefix = route["prefix"]
-    viewset = route["viewset"]
-    basename = route["basename"]
-
-    print(f"Registering route: {prefix}")
-
-    try:
-        router.register(prefix=prefix, viewset=viewset, basename=basename)
-    except Exception as e:
-        print(f"Error registering route: {e}")
-
-print("User urls registered...")
+router.register(
+    prefix="experience-levels",
+    viewset=ExperienceLevelViewset,
+    basename="experience-levels",
+)
+router.register(
+    prefix="trainer-client-memberships",
+    viewset=TrainerClientMembershipViewset,
+    basename="trainer-client-memberships",
+)
+router.register(
+    prefix="training-goals",
+    viewset=TrainingGoalViewset,
+    basename="training-goals",
+)
+router.register(
+    prefix="find-trainers",
+    viewset=TrainerMatchingViewset,
+    basename="find-trainers",
+)
 
 urlpatterns = [path("", include(router.urls))]

@@ -1,27 +1,34 @@
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions, serializers
+from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from rest_framework.response import Response
 
+from core.views import NormalisedLookupViewSet
+
+from .constants import MembershipVocabulary
 from .filters import TrainerClientMembershipFilter
 from .models import (
     ExperienceLevel,
-    MembershipStatus,
     TrainerClientMembership,
     TrainerProfile,
     TrainingGoal,
 )
 from .serializers import (
     ExperienceLevelSerializer,
-    MembershipStatusSerializer,
+    MembershipRequestSerializer,
     TrainerClientMembershipSerializer,
     TrainerProfileSerializer,
     TrainingGoalSerializer,
 )
+from .services.membership import MembershipService
 
 
 # Protected Viewsets
-class TrainerClientMembershipViewset(ModelViewSet):
+class TrainerClientMembershipViewset(
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):
     serializer_class = TrainerClientMembershipSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -29,106 +36,99 @@ class TrainerClientMembershipViewset(ModelViewSet):
     filterset_class = TrainerClientMembershipFilter
 
     def get_queryset(self):
+
+        queryset = TrainerClientMembership.objects.select_related(
+            "trainer__user", "client__user", "status", "previous_membership"
+        )
         # Get the user from the request
         user = self.request.user
 
         # The user is a trainer
         if user.is_trainer:
-            return TrainerClientMembership.objects.filter(trainer=user.trainer_profile)
+            return queryset.filter(trainer=user.trainer_profile)
 
         # The user is a client
-        elif user.is_client:
-            return TrainerClientMembership.objects.filter(client=user.client_profile)
+        if user.is_client:
+            return queryset.filter(client=user.client_profile)
 
         # The user is unknown
-        else:
-            return TrainerClientMembership.objects.none()
+        return queryset.none()
 
-    def perform_create(self, serializer):
-        user = self.request.user
+    def _handle_client_membership_action(self, request, service_action):
+        client_user = request.user
 
-        if not user.is_client:
-            raise PermissionDenied(
-                "Permission Denied: Only client can initiate a membership request."
-            )
+        if not client_user.is_client:
+            raise PermissionDenied("Only clients can initiate a membership request.")
 
-        pending_status = MembershipStatus.objects.get(
-            status_name="PENDING_TRAINER_REVIEW"
+        action_serializer = MembershipRequestSerializer(data=request.data)
+        action_serializer.is_valid(raise_exception=True)
+
+        trainer = get_object_or_404(
+            TrainerProfile.objects.select_related("user"),
+            pk=action_serializer.validated_data["trainer_id"],
         )
 
-        serializer.save(client=user.client_profile, status=pending_status)
+        membership = service_action(client_user=client_user, trainer_user=trainer.user)
 
-    def perform_update(self, serializer):
-        user = self.request.user
+        output = self.get_serializer(membership)
+        return Response(output.data, status=status.HTTP_201_CREATED)
+
+    def _handle_trainer_membership_action(
+        self, request, service_action, action_message
+    ):
         membership = self.get_object()
-        new_status = serializer.validated_data.get("status")
+        trainer_user = request.user
 
-        if not new_status:
-            serializer.save()
-            return
+        if not trainer_user.is_trainer:
+            raise PermissionDenied(
+                f"Only a trainer can {action_message} a pending request."
+            )
 
-        status_name = new_status.status_name
-        current_status = membership.status.status_name
+        membership = service_action(membership=membership, trainer_user=trainer_user)
 
-        # Trainer Path
-        if user.is_trainer:
+        serializer = self.get_serializer(membership)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-            # Only allow change of memberships of my clients
-            if membership.trainer != user.trainer_profile:
-                raise PermissionDenied("Not your client")
+    @action(detail=False, methods=["post"], url_path="request")
+    def request_membership(self, request):
+        return self._handle_client_membership_action(
+            request=request, service_action=MembershipService.request
+        )
 
-            # Can only accept or reject a pending membership
-            if current_status == "PENDING_TRAINER_REVIEW":
-                if status_name not in ["ACTIVE", "REJECTED"]:
-                    raise serializers.ValidationError(
-                        "You can only Accept or Reject pending requests."
-                    )
+    @action(detail=True, methods=["post"])
+    def accept(self, request, pk=None):
+        return self._handle_trainer_membership_action(
+            request=request,
+            service_action=MembershipService.accept,
+            action_message="accept",
+        )
 
-            # Can only dissolve an active membership
-            elif current_status == "ACTIVE":
-                if status_name != "TRAINER_DISSOLVED":
-                    raise serializers.ValidationError(
-                        "You can only dissolve active memberships."
-                    )
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        return self._handle_trainer_membership_action(
+            request=request,
+            service_action=MembershipService.reject,
+            action_message="reject",
+        )
 
-            # Something else went wrong
-            else:
-                raise serializers.ValidationError(
-                    "Cannot change status of this membership."
-                )
+    @action(detail=True, methods=["post"])
+    def dissolve(self, request, pk=None):
+        membership = self.get_object()
+        membership = MembershipService.dissolve(
+            membership=membership, acting_user=request.user
+        )
 
-        # Client Path
-        elif user.is_client:
+        serializer = self.get_serializer(membership)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-            # Ensure its their membership
-            if membership.client != user.client_profile:
-                raise PermissionDenied("Not your trainer")
-
-            # Client can cancel pending requests
-            if current_status == "PENDING_TRAINER_REVIEW":
-                if status_name != "CLIENT_DISSOLVED":
-                    raise serializers.ValidationError(
-                        "You can only cancel pending requests."
-                    )
-
-            # Clients can only dissolved active requests
-            elif current_status == "ACTIVE":
-                if status_name != "CLIENT_DISSOLVED":
-                    raise serializers.ValidationError(
-                        "You can only dissolve active memberships."
-                    )
-
-            # Something else went wrong
-            else:
-                raise serializers.ValidationError(
-                    "Cannot change status of this membership."
-                )
-
-        # All checks passed. Safe to save.
-        serializer.save()
+    @action(detail=False, methods=["post"], url_path="renew")
+    def renew_membership(self, request):
+        return self._handle_client_membership_action(
+            request=request, service_action=MembershipService.renew
+        )
 
 
-class TrainerMatchingViewset(ReadOnlyModelViewSet):
+class TrainerMatchingViewset(viewsets.ReadOnlyModelViewSet):
     serializer_class = TrainerProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -139,38 +139,41 @@ class TrainerMatchingViewset(ReadOnlyModelViewSet):
         # Trainers cant search for other trainers
         user = self.request.user
 
-        queryset = TrainerProfile.objects.select_related("user").prefetch_related(
-            "specialisations",
-            "accepted_experience_levels",
-        )
-
         if user.is_trainer:
             return TrainerProfile.objects.none()
 
-        elif user.is_client:
-            profile = user.client_profile
-            return queryset.filter(
-                specialisations=profile.training_goal,
-                accepted_experience_levels=profile.experience_level,
-            ).distinct()
+        if not user.is_client:
+            return TrainerProfile.objects.none()
 
-        return TrainerProfile.objects.none()
+        profile = user.client_profile
+
+        queryset = TrainerProfile.objects.select_related("user").prefetch_related(
+            "accepted_goals",
+            "accepted_levels",
+        )
+
+        return (
+            queryset.filter(
+                accepted_goals=profile.goal,
+                accepted_levels=profile.level,
+            )
+            .distinct()
+            .exclude(
+                client_memberships__client=profile,
+                client_memberships__status__code__in=[
+                    MembershipVocabulary.PENDING,
+                    MembershipVocabulary.ACTIVE,
+                ],
+            )
+        )
 
 
 # Public Viewsets
-class TrainingGoalViewset(ReadOnlyModelViewSet):
+class TrainingGoalViewset(NormalisedLookupViewSet):
     serializer_class = TrainingGoalSerializer
     queryset = TrainingGoal.objects.all()
-    permission_classes = [permissions.AllowAny]
 
 
-class ExperienceLevelViewset(ReadOnlyModelViewSet):
+class ExperienceLevelViewset(NormalisedLookupViewSet):
     serializer_class = ExperienceLevelSerializer
     queryset = ExperienceLevel.objects.all()
-    permission_classes = [permissions.AllowAny]
-
-
-class MembershipStatusViewset(ReadOnlyModelViewSet):
-    serializer_class = MembershipStatusSerializer
-    queryset = MembershipStatus.objects.all()
-    permission_classes = [permissions.AllowAny]

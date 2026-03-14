@@ -30,7 +30,9 @@ DEBUG = config("DEBUG", default=not IS_PROD, cast=bool)
 
 # --- Environment Keys ---
 SECRET_KEY = config("SECRET_KEY")
-NINJA_API_KEY = config("NINJA_API_KEY")
+NINJA_API_KEY = config(
+    "NINJA_API_KEY", default="" if not IS_PROD else config("NINJA_API_KEY")
+)
 
 if IS_PROD:
     BREVO_API_KEY = config("BREVO_API_KEY")
@@ -200,11 +202,18 @@ CORS_TRUSTED_ORIGINS = config(
     "CORS_TRUSTED_ORIGINS", default="http://localhost:5173", cast=csv_list
 )
 
+if not IS_PROD and not DEBUG:
+    import warnings
+
+    warnings.warn(
+        "Running in non-production mode without DEBUG. Check ENVIRONMENT setting."
+    )
+
 # --- JWT Configuration
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),  # Short Lived Access Token
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Long Lived Refresh Token
-    "ROTATE_REFRESH_TOKENS": False,  # New refresh token on every use
+    "ROTATE_REFRESH_TOKENS": False,  # Dont refresh token on every use
     "AUTH_HEADER_TYPES": ("Bearer",),  # JWT Header
     "BLACKLIST_AFTER_ROTATION": False,  # Not Necessary
     "REFRESH_TOKEN_LEEWAY": 20,  # 20 Second Leeway to Account for Transit Time
@@ -217,11 +226,17 @@ REST_AUTH = {
     "LOGIN_SERIALIZER": "dj_rest_auth.serializers.LoginSerializer",
     "TOKEN_SERIALIZER": "dj_rest_auth.serializers.TokenSerializer",
     "JWT_SERIALIZER": "dj_rest_auth.serializers.JWTSerializer",
-    "JWT_SERIALIZER_WITH_EXPIRATION": "dj_rest_auth.serializers.JWTSerializerWithExpiration",
-    "JWT_TOKEN_CLAIMS_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    "JWT_SERIALIZER_WITH_EXPIRATION": (
+        "dj_rest_auth.serializers.JWTSerializerWithExpiration"
+    ),
+    "JWT_TOKEN_CLAIMS_SERIALIZER": (
+        "rest_framework_simplejwt.serializers.TokenObtainPairSerializer"
+    ),
     "USER_DETAILS_SERIALIZER": "apps.users.serializers.CustomUserSerializer",
     "PASSWORD_RESET_SERIALIZER": "dj_rest_auth.serializers.PasswordResetSerializer",
-    "PASSWORD_RESET_CONFIRM_SERIALIZER": "dj_rest_auth.serializers.PasswordResetConfirmSerializer",
+    "PASSWORD_RESET_CONFIRM_SERIALIZER": (
+        "dj_rest_auth.serializers.PasswordResetConfirmSerializer"
+    ),
     "PASSWORD_CHANGE_SERIALIZER": "dj_rest_auth.serializers.PasswordChangeSerializer",
     "REGISTER_SERIALIZER": "apps.users.serializers.CustomRegisterSerializer",
     # Permission Classes

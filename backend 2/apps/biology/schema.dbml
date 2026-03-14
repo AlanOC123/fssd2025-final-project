@@ -1,0 +1,36 @@
+// Biology Layer
+
+// Normalisation
+table plane_of_motion {
+    id uuid [pk]
+    plane_name varchar [unique, not null, note: "Sagittal | Coronal | Transverse"]
+}
+
+table anatomical_direction {
+    id uuid [pk]
+    direction_name varchar [unique, not null, note: "Anterior | Posterior | Superior | Inferior "]
+}
+
+// Models
+table joint_action {
+    id uuid [pk]
+    action_name varchar [unique, not null, note: "Flexion | Extension etc."]
+    plane_of_motion_id uuid [ref: > plane_of_motion.id]
+}
+
+table joint_capabilities {
+    id uuid [pk]
+    joint_action_id uuid [ref: > joint_action.id]
+    joint_id uuid [ref: > joint.id]
+}
+
+table muscle {
+    id uuid [pk]
+    muscle_name varchar [unique, not null]
+    anatomical_direction_id uuid [ref: > anatomical_direction.id]
+}
+
+table joint {
+    id uuid [pk]
+    joint_name varchar [unique, not null]
+}

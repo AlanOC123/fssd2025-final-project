@@ -1,0 +1,47 @@
+// Exercise Layer
+
+// Normalisation
+table muscle_role {
+    id uuid [pk]
+    role_name varchar [not null, note: "Primary | Secondary | Stabiliser"]
+    impact_factor decimal [not null, note: "0-1 value to represent percentage"]
+}
+
+table joint_motion_range {
+    id uuid [pk]
+    role_name varchar [not null, note: "Full | Most | Partial | Minimal"]
+    impact_factor decimal [not null, note: "0-1 value to represent percentage"]
+}
+
+table exercise_phases {
+    id uuid [pk]
+    phase_name varchar [not null, unique, note: "Eccentric | Isometric | Concentric | Isotonic"]
+}
+
+// Models
+table exercise {
+    id uuid [pk]
+    name varchar [unique, not null]
+    instruction_link varchar [unique, not null, note: "Points to Ninja API to offload instructions. Use a function to build api url from. Dont expose API Key here"]
+    created_at datetime
+}
+
+table exercise_movement {
+    id uuid [pk]
+    phase_id uuid [ref: > exercise_phases.id]
+    exercise_id uuid [ref: > exercise.id]
+}
+
+table joint_contribution {
+    id uuid [pk]
+    joint_id uuid [ref: > joint.id]
+    exercise_movement_id uuid [ref: > exercise_movement.id]
+    joint_motion_range_id uuid [ref: > joint_motion_range.id]
+}
+
+table muscle_contribution {
+    id uuid [pk]
+    muscle_id uuid [ref: > muscle.id]
+    exercise_movement_id uuid [ref: > exercise_movement.id]
+    muscle_role_id uuid [ref: > muscle_role.id]
+}

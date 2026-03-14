@@ -1,9 +1,11 @@
 import uuid
 
+import pytest
 from django.db import models
 from django.test import TestCase
+from model_bakery import baker
 
-from core.models import ApexModel
+from core.models import ApexModel, NormalisedLookupModel
 
 
 class DummyModel(ApexModel):
@@ -40,3 +42,28 @@ class TestApexModel(TestCase):
         obj.save()
 
         self.assertNotEqual(obj.updated_at, original_time)
+
+
+class DummyLookupModel(NormalisedLookupModel):
+    class Meta:
+        app_label = "core"
+
+
+@pytest.mark.django_db
+class TestNormalisationModel:
+    def test_normalised_table_fields(self):
+        """Tests a normalised table is created with a code and a display name"""
+
+        obj = baker.make(
+            DummyLookupModel,
+            code="ACTIVE",
+            label="Active",
+            order_index=1,
+            description="Test Description",
+        )
+
+        assert obj.code == "ACTIVE"
+        assert obj.label == "Active"
+        assert obj.order_index == 1
+        assert obj.description == "Test Description"
+        assert str(obj) == "Active"

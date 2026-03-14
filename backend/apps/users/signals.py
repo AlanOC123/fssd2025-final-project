@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -9,6 +10,5 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         if instance.is_trainer:
             TrainerProfile.objects.create(user=instance)
-
         elif instance.is_client:
             ClientProfile.objects.create(user=instance)

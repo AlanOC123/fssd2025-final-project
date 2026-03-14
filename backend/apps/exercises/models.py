@@ -1,43 +1,27 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 from apps.biology.models import JointAction
 from apps.users.models import ExperienceLevel
-from core.models import ApexModel
+from core.models import ApexModel, NormalisedLookupModel
 
 
-class JointRangeOfMotion(ApexModel):
-    """
-    Describes the available range of motion and enables impact contribution factors.
-    """
-
-    range_of_motion_name = models.CharField(max_length=50, unique=True)
+class JointRangeOfMotion(NormalisedLookupModel):
     impact_factor = models.DecimalField(max_digits=3, decimal_places=2)
 
-    def __str__(self) -> str:
-        return self.range_of_motion_name
+    class Meta:
+        verbose_name_plural = "Joint Ranges of Motion"
+        ordering = ["-impact_factor"]
 
 
-class ExercisePhase(ApexModel):
-    """
-    Describes the available phases of a movement
-    """
-
-    phase_name = models.CharField(max_length=50, unique=True)
-
-    def __str__(self) -> str:
-        return self.phase_name
+class ExercisePhase(NormalisedLookupModel):
+    class Meta:
+        verbose_name_plural = "Exercise Phases"
 
 
-class Equipment(ApexModel):
-    """
-    Table to serialise equipment.
-    Equipment name gained from call to Ninja API.
-    """
-
-    equipment_name = models.TextField(max_length=100, unique=True)
-
-    def __str__(self) -> str:
-        return self.equipment_name
+class Equipment(NormalisedLookupModel):
+    class Meta:
+        verbose_name_plural = "Equipment"
 
 
 class Exercise(ApexModel):
@@ -47,21 +31,36 @@ class Exercise(ApexModel):
     """
 
     exercise_name = models.CharField(max_length=100, unique=True)
-
     api_name = models.CharField(max_length=100, unique=True)
-
     equipment = models.ManyToManyField(
         to=Equipment, related_name="exercises", blank=True
     )
-
     experience_level = models.ForeignKey(
         to=ExperienceLevel, on_delete=models.CASCADE, related_name="exercises"
     )
-
     instructions = models.TextField(blank=True)
     safety_tips = models.TextField(blank=True)
-
     is_enriched = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name_plural = "Exercises"
+        ordering = ["exercise_name"]
+
+    def clean(self):
+        super().clean()
+
+        if self.is_enriched and (not self.instructions or not self.safety_tips):
+            raise ValidationError(
+                {
+                    "is_enriched": "Enriched exercises must include instructions and safety_tips."
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.is_enriched = bool(self.instructions and self.safety_tips)
+
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.exercise_name
@@ -81,10 +80,17 @@ class ExerciseMovement(ApexModel):
     )
 
     class Meta:
-        unique_together = ("exercise", "phase")
+        verbose_name_plural = "Exercise Movements"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["phase", "exercise"], name="unique_phase_per_exercise_movement"
+            )
+        ]
+
+        ordering = ["phase__code"]
 
     def __str__(self) -> str:
-        return f"{self.phase.phase_name} of {self.exercise.exercise_name}"
+        return f"{self.phase.label} of {self.exercise.exercise_name}"
 
 
 class JointContribution(ApexModel):
@@ -110,7 +116,14 @@ class JointContribution(ApexModel):
     )
 
     class Meta:
-        unique_together = ("exercise_movement", "joint_action")
+        verbose_name_plural = "Joint Contributions"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["exercise_movement", "joint_action"],
+                name="unique_exercise_movement_per_joint_action",
+            )
+        ]
+
         ordering = ["-joint_range_of_motion__impact_factor"]
 
     def __str__(self) -> str:

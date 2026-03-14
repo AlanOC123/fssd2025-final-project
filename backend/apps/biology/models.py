@@ -1,67 +1,71 @@
+from decimal import Decimal
+
+from django.core.exceptions import ValidationError
 from django.db import models
 
-from core.models import ApexModel
+from core.models import ApexModel, NormalisedLookupModel
 
 
-class PlaneOfMotion(ApexModel):
+class PlaneOfMotion(NormalisedLookupModel):
+    class Meta:
+        verbose_name_plural = "Planes of Motion"
+
+
+class AnatomicalDirection(NormalisedLookupModel):
+    class Meta:
+        verbose_name_plural = "Anatomical Directions"
+
+
+class MovementPattern(NormalisedLookupModel):
+    class Meta:
+        verbose_name_plural = "Movement Patterns"
+
+
+class MuscleRole(NormalisedLookupModel):
+    class Meta:
+        verbose_name_plural = "Muscle Roles"
+
+
+class Joint(NormalisedLookupModel):
+    class Meta:
+        verbose_name_plural = "Joints"
+
+
+class MuscleGroup(NormalisedLookupModel):
+    class Meta:
+        verbose_name_plural = "Muscle Groups"
+
+
+class Muscle(NormalisedLookupModel):
     """
-    Helper table for consistent planes of motion
-    """
-
-    plane_name = models.CharField(max_length=50, unique=True)
-
-    def __str__(self) -> str:
-        return self.plane_name
-
-
-class AnatomicalDirection(ApexModel):
-    """
-    Helper table consistent anatomical directions
-    """
-
-    direction_name = models.CharField(max_length=50, unique=True)
-
-    def __str__(self) -> str:
-        return self.direction_name
-
-
-class MovementPattern(ApexModel):
-    """
-    Helper table consistent movement patterns
-    """
-
-    pattern_name = models.CharField(max_length=100, unique=True)
-
-    def __str__(self) -> str:
-        return self.pattern_name
-
-
-class MuscleRole(ApexModel):
-    """
-    Helper table consistent muscle roles names
+    Table to list muscle names.
+    Allows tracking of load and complex relations back to joints.
     """
 
-    role_name = models.CharField(max_length=50, unique=True)
+    anatomical_direction = models.ForeignKey(
+        to=AnatomicalDirection,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="muscles",
+    )
 
-    def __str__(self) -> str:
-        return self.role_name
+    muscle_group = models.ForeignKey(
+        to=MuscleGroup,
+        on_delete=models.CASCADE,
+        related_name="muscles",
+        null=True,
+        blank=True,
+    )
 
-
-class Joint(ApexModel):
-    """
-    Main hook table for exercise biomechanics
-    """
-
-    joint_name = models.CharField(max_length=50, unique=True)
-
-    def __str__(self) -> str:
-        return self.joint_name
+    class Meta:
+        verbose_name_plural = "Muscles"
 
 
 class JointAction(ApexModel):
     """
-    Expands joints to make them actionable. Contains metadata about movement.
-    Ensure uniqueness.
+    Represents a specific movement a joint can perform.
+    Each joint can only have one entry per movement pattern.
     """
 
     joint = models.ForeignKey(
@@ -77,37 +81,25 @@ class JointAction(ApexModel):
     )
 
     class Meta:
-        unique_together = ("joint", "movement")
+        constraints = [
+            models.UniqueConstraint(
+                name="unique_movement_per_joint", fields=["joint", "movement"]
+            )
+        ]
+
+        verbose_name_plural = "Joint Actions"
 
     def __str__(self) -> str:
-        return f"{self.joint.joint_name} {self.movement.pattern_name}"
-
-
-class Muscle(ApexModel):
-    """
-    Table to list muscle names.
-    Allows tracking of load and complex relations back to joints.
-    """
-
-    muscle_name = models.CharField(max_length=100, unique=True)
-
-    anatomical_direction = models.ForeignKey(
-        to=AnatomicalDirection,
-        on_delete=models.CASCADE,
-        null=True,
-        related_name="muscles",
-    )
-
-    def __str__(self) -> str:
-        return self.muscle_name
+        return f"{self.joint.code} {self.movement.code}"
 
 
 class MuscleInvolvement(ApexModel):
     """
-    Track muscle involments in enabling a joint action.
-    Allows more complex load calculations.
-    Ordered by impact factor.
-    Enables unique muscle -> joint interactions.
+    Weighted relationship between a muscle and a joint action.
+
+    impact_factor expresses relative contribution of the muscle
+    in the action (0.00–1.00). Used later for load distribution
+    calculations in training analysis.
     """
 
     muscle = models.ForeignKey(
@@ -131,5 +123,22 @@ class MuscleInvolvement(ApexModel):
         return f"{self.muscle} -> {self.joint_action}"
 
     class Meta:
-        unique_together = ("muscle", "joint_action")
         ordering = ["-impact_factor"]
+        constraints = [
+            models.UniqueConstraint(
+                name="unique_muscle_joint_action", fields=["muscle", "joint_action"]
+            )
+        ]
+
+    def clean(self) -> None:
+        super().clean()
+
+        if self.impact_factor is None:
+            raise ValidationError("Missing impact factor")
+
+        if self.impact_factor < Decimal("0.00") or self.impact_factor > Decimal("1.00"):
+            raise ValidationError("Impact factor must be between 0.00 and 1.00")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
