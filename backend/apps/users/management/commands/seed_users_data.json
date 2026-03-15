@@ -1,17 +1,53 @@
 {
-    "experience_level": ["Beginner", "Intermediate", "Advanced", "Elite"],
-    "training_goal": [
-        "Strength",
-        "Muscle Gain",
-        "Muscle Endurance",
-        "Recovery"
+    "experience_levels": [
+        {
+            "code": "BEGINNER",
+            "label": "Beginner",
+            "progression_cap_percent": "0.15"
+        },
+        {
+            "code": "INTERMEDIATE",
+            "label": "Intermediate",
+            "progression_cap_percent": "0.20"
+        },
+        {
+            "code": "ADVANCED",
+            "label": "Advanced",
+            "progression_cap_percent": "0.25"
+        },
+        { "code": "ELITE", "label": "Elite", "progression_cap_percent": "0.10" }
     ],
-    "membership_status": [
-        "PENDING_TRAINER_REVIEW",
-        "PENDING_CLIENT_CONFIRMATION",
-        "ACTIVE",
-        "REJECTED",
-        "TRAINER_DISSOLVED",
-        "CLIENT_DISSOLVED"
+    "training_goals": [
+        {
+            "code": "STRENGTH",
+            "label": "Strength",
+            "rep_range_min": 1,
+            "rep_range_max": 5
+        },
+        {
+            "code": "HYPERTROPHY",
+            "label": "Hypertrophy",
+            "rep_range_min": 6,
+            "rep_range_max": 12
+        },
+        {
+            "code": "MUSCLE_ENDURANCE",
+            "label": "Muscle Endurance",
+            "rep_range_min": 15,
+            "rep_range_max": 20
+        },
+        {
+            "code": "RECOVERY",
+            "label": "Recovery",
+            "rep_range_min": null,
+            "rep_range_max": null
+        }
+    ],
+    "membership_statuses": [
+        { "code": "PENDING_TRAINER_REVIEW", "label": "Pending Trainer Review" },
+        { "code": "ACTIVE", "label": "Active" },
+        { "code": "REJECTED", "label": "Rejected" },
+        { "code": "DISSOLVED_BY_CLIENT", "label": "Dissolved by Client" },
+        { "code": "DISSOLVED_BY_TRAINER", "label": "Dissolved by Trainer" }
     ]
 }

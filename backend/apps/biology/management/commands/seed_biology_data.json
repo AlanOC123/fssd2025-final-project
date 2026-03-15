@@ -1,364 +1,522 @@
 {
-    "planes": ["Sagittal", "Frontal", "Transverse"],
-    "directions": [
-        "Anterior",
-        "Posterior",
-        "Lateral",
-        "Medial",
-        "Superior",
-        "Inferior"
+    "planes_of_motion": [
+        { "code": "SAGITTAL", "label": "Sagittal" },
+        { "code": "FRONTAL", "label": "Frontal" },
+        { "code": "TRANSVERSE", "label": "Transverse" }
     ],
-    "movements": [
-        "Flexion",
-        "Extension",
-        "Abduction",
-        "Adduction",
-        "Internal Rotation",
-        "External Rotation",
-        "Horizontal Adduction",
-        "Horizontal Abduction",
-        "Dorsiflexion",
-        "Plantarflexion",
-        "Elevation",
-        "Depression",
-        "Protraction",
-        "Retraction"
+    "anatomical_directions": [
+        { "code": "ANTERIOR", "label": "Anterior" },
+        { "code": "POSTERIOR", "label": "Posterior" },
+        { "code": "LATERAL", "label": "Lateral" },
+        { "code": "MEDIAL", "label": "Medial" },
+        { "code": "SUPERIOR", "label": "Superior" },
+        { "code": "INFERIOR", "label": "Inferior" }
     ],
-    "joints": ["Shoulder", "Elbow", "Spine", "Hip", "Knee", "Ankle", "Scapula"],
-
-    "muscle_roles": ["Agonist", "Antagonist", "Synergist", "Fixator"],
-
+    "movement_patterns": [
+        { "code": "FLEXION", "label": "Flexion" },
+        { "code": "EXTENSION", "label": "Extension" },
+        { "code": "ABDUCTION", "label": "Abduction" },
+        { "code": "ADDUCTION", "label": "Adduction" },
+        { "code": "INTERNAL_ROTATION", "label": "Internal Rotation" },
+        { "code": "EXTERNAL_ROTATION", "label": "External Rotation" },
+        { "code": "HORIZONTAL_ADDUCTION", "label": "Horizontal Adduction" },
+        { "code": "HORIZONTAL_ABDUCTION", "label": "Horizontal Abduction" },
+        { "code": "DORSIFLEXION", "label": "Dorsiflexion" },
+        { "code": "PLANTARFLEXION", "label": "Plantarflexion" },
+        { "code": "ELEVATION", "label": "Elevation" },
+        { "code": "DEPRESSION", "label": "Depression" },
+        { "code": "PROTRACTION", "label": "Protraction" },
+        { "code": "RETRACTION", "label": "Retraction" }
+    ],
+    "joints": [
+        { "code": "SHOULDER", "label": "Shoulder" },
+        { "code": "ELBOW", "label": "Elbow" },
+        { "code": "SPINE", "label": "Spine" },
+        { "code": "HIP", "label": "Hip" },
+        { "code": "KNEE", "label": "Knee" },
+        { "code": "ANKLE", "label": "Ankle" },
+        { "code": "SCAPULA", "label": "Scapula" }
+    ],
+    "muscle_roles": [
+        { "code": "AGONIST", "label": "Agonist" },
+        { "code": "ANTAGONIST", "label": "Antagonist" },
+        { "code": "SYNERGIST", "label": "Synergist" },
+        { "code": "FIXATOR", "label": "Fixator" }
+    ],
+    "muscle_groups": [
+        { "code": "CHEST", "label": "Chest" },
+        { "code": "SHOULDER", "label": "Shoulder" },
+        { "code": "BACK", "label": "Back" },
+        { "code": "UPPER_ARM", "label": "Upper Arm" },
+        { "code": "FOREARM", "label": "Forearm" },
+        { "code": "CORE", "label": "Core" },
+        { "code": "GLUTES", "label": "Glutes" },
+        { "code": "QUADRICEPS", "label": "Quadriceps" },
+        { "code": "HAMSTRINGS", "label": "Hamstrings" },
+        { "code": "CALVES", "label": "Calves" },
+        { "code": "HIP_FLEXORS", "label": "Hip Flexors" }
+    ],
     "muscles": [
-        { "name": "Pectoralis Major", "direction": "Anterior" },
-        { "name": "Latissimus Dorsi", "direction": "Posterior" },
-        { "name": "Deltoid (Anterior)", "direction": "Anterior" },
-        { "name": "Deltoid (Lateral)", "direction": "Lateral" },
-        { "name": "Deltoid (Posterior)", "direction": "Posterior" },
-        { "name": "Trapezius", "direction": "Posterior" },
-        { "name": "Rhomboids", "direction": "Posterior" },
-        { "name": "Biceps Brachii", "direction": "Anterior" },
-        { "name": "Triceps Brachii", "direction": "Posterior" },
-        { "name": "Rectus Abdominis", "direction": "Anterior" },
-        { "name": "Obliques", "direction": "Lateral" },
-        { "name": "Erector Spinae", "direction": "Posterior" },
-        { "name": "Gluteus Maximus", "direction": "Posterior" },
-        { "name": "Gluteus Medius", "direction": "Lateral" },
-        { "name": "Quadriceps", "direction": "Anterior" },
-        { "name": "Hamstrings", "direction": "Posterior" },
-        { "name": "Gastrocnemius", "direction": "Posterior" },
-        { "name": "Soleus", "direction": "Posterior" },
-        { "name": "Tibialis Anterior", "direction": "Anterior" }
+        {
+            "code": "PECTORALIS_MAJOR",
+            "label": "Pectoralis Major",
+            "direction": "ANTERIOR",
+            "group": "CHEST"
+        },
+        {
+            "code": "LATISSIMUS_DORSI",
+            "label": "Latissimus Dorsi",
+            "direction": "POSTERIOR",
+            "group": "BACK"
+        },
+        {
+            "code": "DELTOID_ANTERIOR",
+            "label": "Deltoid (Anterior)",
+            "direction": "ANTERIOR",
+            "group": "SHOULDER"
+        },
+        {
+            "code": "DELTOID_LATERAL",
+            "label": "Deltoid (Lateral)",
+            "direction": "LATERAL",
+            "group": "SHOULDER"
+        },
+        {
+            "code": "DELTOID_POSTERIOR",
+            "label": "Deltoid (Posterior)",
+            "direction": "POSTERIOR",
+            "group": "SHOULDER"
+        },
+        {
+            "code": "TRAPEZIUS",
+            "label": "Trapezius",
+            "direction": "POSTERIOR",
+            "group": "BACK"
+        },
+        {
+            "code": "RHOMBOIDS",
+            "label": "Rhomboids",
+            "direction": "POSTERIOR",
+            "group": "BACK"
+        },
+        {
+            "code": "BICEPS_BRACHII",
+            "label": "Biceps Brachii",
+            "direction": "ANTERIOR",
+            "group": "UPPER_ARM"
+        },
+        {
+            "code": "TRICEPS_BRACHII",
+            "label": "Triceps Brachii",
+            "direction": "POSTERIOR",
+            "group": "UPPER_ARM"
+        },
+        {
+            "code": "RECTUS_ABDOMINIS",
+            "label": "Rectus Abdominis",
+            "direction": "ANTERIOR",
+            "group": "CORE"
+        },
+        {
+            "code": "OBLIQUES",
+            "label": "Obliques",
+            "direction": "LATERAL",
+            "group": "CORE"
+        },
+        {
+            "code": "ERECTOR_SPINAE",
+            "label": "Erector Spinae",
+            "direction": "POSTERIOR",
+            "group": "BACK"
+        },
+        {
+            "code": "GLUTEUS_MAXIMUS",
+            "label": "Gluteus Maximus",
+            "direction": "POSTERIOR",
+            "group": "GLUTES"
+        },
+        {
+            "code": "GLUTEUS_MEDIUS",
+            "label": "Gluteus Medius",
+            "direction": "LATERAL",
+            "group": "GLUTES"
+        },
+        {
+            "code": "QUADRICEPS",
+            "label": "Quadriceps",
+            "direction": "ANTERIOR",
+            "group": "QUADRICEPS"
+        },
+        {
+            "code": "HAMSTRINGS",
+            "label": "Hamstrings",
+            "direction": "POSTERIOR",
+            "group": "HAMSTRINGS"
+        },
+        {
+            "code": "GASTROCNEMIUS",
+            "label": "Gastrocnemius",
+            "direction": "POSTERIOR",
+            "group": "CALVES"
+        },
+        {
+            "code": "SOLEUS",
+            "label": "Soleus",
+            "direction": "POSTERIOR",
+            "group": "CALVES"
+        },
+        {
+            "code": "TIBIALIS_ANTERIOR",
+            "label": "Tibialis Anterior",
+            "direction": "ANTERIOR",
+            "group": "CALVES"
+        }
     ],
-
     "joint_actions": [
         {
-            "joint": "Elbow",
-            "movement": "Flexion",
-            "plane": "Sagittal",
-            "muscles": [
-                { "name": "Biceps Brachii", "role": "Agonist", "impact": 1.0 },
-                {
-                    "name": "Triceps Brachii",
-                    "role": "Antagonist",
-                    "impact": 0.3
-                }
-            ]
-        },
-        {
-            "joint": "Elbow",
-            "movement": "Extension",
-            "plane": "Sagittal",
-            "muscles": [
-                { "name": "Triceps Brachii", "role": "Agonist", "impact": 1.0 },
-                {
-                    "name": "Biceps Brachii",
-                    "role": "Antagonist",
-                    "impact": 0.3
-                }
-            ]
-        },
-        {
-            "joint": "Shoulder",
-            "movement": "Flexion",
-            "plane": "Sagittal",
+            "joint": "ELBOW",
+            "movement": "FLEXION",
+            "plane": "SAGITTAL",
             "muscles": [
                 {
-                    "name": "Deltoid (Anterior)",
-                    "role": "Agonist",
-                    "impact": 1.0
+                    "code": "BICEPS_BRACHII",
+                    "role": "AGONIST",
+                    "impact": "1.00"
                 },
                 {
-                    "name": "Pectoralis Major",
-                    "role": "Synergist",
-                    "impact": 0.6
+                    "code": "TRICEPS_BRACHII",
+                    "role": "ANTAGONIST",
+                    "impact": "0.30"
+                }
+            ]
+        },
+        {
+            "joint": "ELBOW",
+            "movement": "EXTENSION",
+            "plane": "SAGITTAL",
+            "muscles": [
+                {
+                    "code": "TRICEPS_BRACHII",
+                    "role": "AGONIST",
+                    "impact": "1.00"
                 },
                 {
-                    "name": "Latissimus Dorsi",
-                    "role": "Antagonist",
-                    "impact": 0.4
+                    "code": "BICEPS_BRACHII",
+                    "role": "ANTAGONIST",
+                    "impact": "0.30"
                 }
             ]
         },
         {
-            "joint": "Shoulder",
-            "movement": "Extension",
-            "plane": "Sagittal",
+            "joint": "SHOULDER",
+            "movement": "FLEXION",
+            "plane": "SAGITTAL",
             "muscles": [
                 {
-                    "name": "Latissimus Dorsi",
-                    "role": "Agonist",
-                    "impact": 1.0
+                    "code": "DELTOID_ANTERIOR",
+                    "role": "AGONIST",
+                    "impact": "1.00"
                 },
                 {
-                    "name": "Deltoid (Posterior)",
-                    "role": "Synergist",
-                    "impact": 0.7
+                    "code": "PECTORALIS_MAJOR",
+                    "role": "SYNERGIST",
+                    "impact": "0.60"
                 },
                 {
-                    "name": "Deltoid (Anterior)",
-                    "role": "Antagonist",
-                    "impact": 0.4
+                    "code": "LATISSIMUS_DORSI",
+                    "role": "ANTAGONIST",
+                    "impact": "0.40"
                 }
             ]
         },
         {
-            "joint": "Shoulder",
-            "movement": "Abduction",
-            "plane": "Frontal",
+            "joint": "SHOULDER",
+            "movement": "EXTENSION",
+            "plane": "SAGITTAL",
             "muscles": [
                 {
-                    "name": "Deltoid (Lateral)",
-                    "role": "Agonist",
-                    "impact": 1.0
+                    "code": "LATISSIMUS_DORSI",
+                    "role": "AGONIST",
+                    "impact": "1.00"
                 },
                 {
-                    "name": "Latissimus Dorsi",
-                    "role": "Antagonist",
-                    "impact": 0.3
+                    "code": "DELTOID_POSTERIOR",
+                    "role": "SYNERGIST",
+                    "impact": "0.70"
                 },
                 {
-                    "name": "Pectoralis Major",
-                    "role": "Antagonist",
-                    "impact": 0.3
+                    "code": "DELTOID_ANTERIOR",
+                    "role": "ANTAGONIST",
+                    "impact": "0.40"
                 }
             ]
         },
         {
-            "joint": "Shoulder",
-            "movement": "Horizontal Adduction",
-            "plane": "Transverse",
+            "joint": "SHOULDER",
+            "movement": "ABDUCTION",
+            "plane": "FRONTAL",
             "muscles": [
                 {
-                    "name": "Pectoralis Major",
-                    "role": "Agonist",
-                    "impact": 1.0
+                    "code": "DELTOID_LATERAL",
+                    "role": "AGONIST",
+                    "impact": "1.00"
                 },
                 {
-                    "name": "Deltoid (Anterior)",
-                    "role": "Synergist",
-                    "impact": 0.7
+                    "code": "LATISSIMUS_DORSI",
+                    "role": "ANTAGONIST",
+                    "impact": "0.30"
                 },
                 {
-                    "name": "Deltoid (Posterior)",
-                    "role": "Antagonist",
-                    "impact": 0.5
+                    "code": "PECTORALIS_MAJOR",
+                    "role": "ANTAGONIST",
+                    "impact": "0.30"
                 }
             ]
         },
         {
-            "joint": "Shoulder",
-            "movement": "Horizontal Abduction",
-            "plane": "Transverse",
+            "joint": "SHOULDER",
+            "movement": "ADDUCTION",
+            "plane": "FRONTAL",
             "muscles": [
                 {
-                    "name": "Deltoid (Posterior)",
-                    "role": "Agonist",
-                    "impact": 1.0
-                },
-                { "name": "Rhomboids", "role": "Synergist", "impact": 0.6 },
-                {
-                    "name": "Pectoralis Major",
-                    "role": "Antagonist",
-                    "impact": 0.5
-                }
-            ]
-        },
-        {
-            "joint": "Shoulder",
-            "movement": "Adduction",
-            "plane": "Frontal",
-            "muscles": [
-                {
-                    "name": "Latissimus Dorsi",
-                    "role": "Agonist",
-                    "impact": 1.0
+                    "code": "LATISSIMUS_DORSI",
+                    "role": "AGONIST",
+                    "impact": "1.00"
                 },
                 {
-                    "name": "Pectoralis Major",
-                    "role": "Synergist",
-                    "impact": 0.8
+                    "code": "PECTORALIS_MAJOR",
+                    "role": "SYNERGIST",
+                    "impact": "0.80"
                 },
                 {
-                    "name": "Deltoid (Lateral)",
-                    "role": "Antagonist",
-                    "impact": 0.5
+                    "code": "DELTOID_LATERAL",
+                    "role": "ANTAGONIST",
+                    "impact": "0.50"
                 }
             ]
         },
         {
-            "joint": "Scapula",
-            "movement": "Elevation",
-            "plane": "Frontal",
-            "muscles": [
-                { "name": "Trapezius", "role": "Agonist", "impact": 1.0 },
-                {
-                    "name": "Latissimus Dorsi",
-                    "role": "Antagonist",
-                    "impact": 0.4
-                }
-            ]
-        },
-        {
-            "joint": "Scapula",
-            "movement": "Retraction",
-            "plane": "Transverse",
-            "muscles": [
-                { "name": "Rhomboids", "role": "Agonist", "impact": 1.0 },
-                { "name": "Trapezius", "role": "Synergist", "impact": 0.8 },
-                {
-                    "name": "Pectoralis Major",
-                    "role": "Antagonist",
-                    "impact": 0.5
-                }
-            ]
-        },
-        {
-            "joint": "Scapula",
-            "movement": "Depression",
-            "plane": "Frontal",
-            "muscles": [
-                { "name": "Trapezius", "role": "Agonist", "impact": 0.8 },
-                {
-                    "name": "Latissimus Dorsi",
-                    "role": "Synergist",
-                    "impact": 0.5
-                }
-            ]
-        },
-        {
-            "joint": "Spine",
-            "movement": "Flexion",
-            "plane": "Sagittal",
+            "joint": "SHOULDER",
+            "movement": "HORIZONTAL_ADDUCTION",
+            "plane": "TRANSVERSE",
             "muscles": [
                 {
-                    "name": "Rectus Abdominis",
-                    "role": "Agonist",
-                    "impact": 1.0
+                    "code": "PECTORALIS_MAJOR",
+                    "role": "AGONIST",
+                    "impact": "1.00"
                 },
                 {
-                    "name": "Erector Spinae",
-                    "role": "Antagonist",
-                    "impact": 0.5
-                }
-            ]
-        },
-        {
-            "joint": "Spine",
-            "movement": "Extension",
-            "plane": "Sagittal",
-            "muscles": [
-                { "name": "Erector Spinae", "role": "Agonist", "impact": 1.0 },
-                {
-                    "name": "Rectus Abdominis",
-                    "role": "Antagonist",
-                    "impact": 0.5
-                }
-            ]
-        },
-        {
-            "joint": "Hip",
-            "movement": "Extension",
-            "plane": "Sagittal",
-            "muscles": [
-                { "name": "Gluteus Maximus", "role": "Agonist", "impact": 1.0 },
-                { "name": "Hamstrings", "role": "Synergist", "impact": 0.8 },
-                { "name": "Rectus Abdominis", "role": "Fixator", "impact": 0.4 }
-            ]
-        },
-        {
-            "joint": "Hip",
-            "movement": "Flexion",
-            "plane": "Sagittal",
-            "muscles": [
-                {
-                    "name": "Rectus Abdominis",
-                    "role": "Synergist",
-                    "impact": 0.4
+                    "code": "DELTOID_ANTERIOR",
+                    "role": "SYNERGIST",
+                    "impact": "0.70"
                 },
                 {
-                    "name": "Gluteus Maximus",
-                    "role": "Antagonist",
-                    "impact": 0.5
+                    "code": "DELTOID_POSTERIOR",
+                    "role": "ANTAGONIST",
+                    "impact": "0.50"
                 }
             ]
         },
         {
-            "joint": "Hip",
-            "movement": "Abduction",
-            "plane": "Frontal",
-            "muscles": [
-                { "name": "Gluteus Medius", "role": "Agonist", "impact": 1.0 },
-                {
-                    "name": "Gluteus Maximus",
-                    "role": "Synergist",
-                    "impact": 0.3
-                }
-            ]
-        },
-        {
-            "joint": "Knee",
-            "movement": "Flexion",
-            "plane": "Sagittal",
-            "muscles": [
-                { "name": "Hamstrings", "role": "Agonist", "impact": 1.0 },
-                { "name": "Gastrocnemius", "role": "Synergist", "impact": 0.5 },
-                { "name": "Quadriceps", "role": "Antagonist", "impact": 0.4 }
-            ]
-        },
-        {
-            "joint": "Knee",
-            "movement": "Extension",
-            "plane": "Sagittal",
-            "muscles": [
-                { "name": "Quadriceps", "role": "Agonist", "impact": 1.0 },
-                { "name": "Hamstrings", "role": "Antagonist", "impact": 0.4 }
-            ]
-        },
-        {
-            "joint": "Ankle",
-            "movement": "Plantarflexion",
-            "plane": "Sagittal",
-            "muscles": [
-                { "name": "Gastrocnemius", "role": "Agonist", "impact": 1.0 },
-                { "name": "Soleus", "role": "Agonist", "impact": 0.9 },
-                {
-                    "name": "Tibialis Anterior",
-                    "role": "Antagonist",
-                    "impact": 0.4
-                }
-            ]
-        },
-        {
-            "joint": "Ankle",
-            "movement": "Dorsiflexion",
-            "plane": "Sagittal",
+            "joint": "SHOULDER",
+            "movement": "HORIZONTAL_ABDUCTION",
+            "plane": "TRANSVERSE",
             "muscles": [
                 {
-                    "name": "Tibialis Anterior",
-                    "role": "Agonist",
-                    "impact": 1.0
+                    "code": "DELTOID_POSTERIOR",
+                    "role": "AGONIST",
+                    "impact": "1.00"
                 },
-                { "name": "Gastrocnemius", "role": "Antagonist", "impact": 0.4 }
+                { "code": "RHOMBOIDS", "role": "SYNERGIST", "impact": "0.60" },
+                {
+                    "code": "PECTORALIS_MAJOR",
+                    "role": "ANTAGONIST",
+                    "impact": "0.50"
+                }
+            ]
+        },
+        {
+            "joint": "SCAPULA",
+            "movement": "ELEVATION",
+            "plane": "FRONTAL",
+            "muscles": [
+                { "code": "TRAPEZIUS", "role": "AGONIST", "impact": "1.00" },
+                {
+                    "code": "LATISSIMUS_DORSI",
+                    "role": "ANTAGONIST",
+                    "impact": "0.40"
+                }
+            ]
+        },
+        {
+            "joint": "SCAPULA",
+            "movement": "DEPRESSION",
+            "plane": "FRONTAL",
+            "muscles": [
+                { "code": "TRAPEZIUS", "role": "AGONIST", "impact": "0.80" },
+                {
+                    "code": "LATISSIMUS_DORSI",
+                    "role": "SYNERGIST",
+                    "impact": "0.50"
+                }
+            ]
+        },
+        {
+            "joint": "SCAPULA",
+            "movement": "RETRACTION",
+            "plane": "TRANSVERSE",
+            "muscles": [
+                { "code": "RHOMBOIDS", "role": "AGONIST", "impact": "1.00" },
+                { "code": "TRAPEZIUS", "role": "SYNERGIST", "impact": "0.80" },
+                {
+                    "code": "PECTORALIS_MAJOR",
+                    "role": "ANTAGONIST",
+                    "impact": "0.50"
+                }
+            ]
+        },
+        {
+            "joint": "SPINE",
+            "movement": "FLEXION",
+            "plane": "SAGITTAL",
+            "muscles": [
+                {
+                    "code": "RECTUS_ABDOMINIS",
+                    "role": "AGONIST",
+                    "impact": "1.00"
+                },
+                {
+                    "code": "ERECTOR_SPINAE",
+                    "role": "ANTAGONIST",
+                    "impact": "0.50"
+                }
+            ]
+        },
+        {
+            "joint": "SPINE",
+            "movement": "EXTENSION",
+            "plane": "SAGITTAL",
+            "muscles": [
+                {
+                    "code": "ERECTOR_SPINAE",
+                    "role": "AGONIST",
+                    "impact": "1.00"
+                },
+                {
+                    "code": "RECTUS_ABDOMINIS",
+                    "role": "ANTAGONIST",
+                    "impact": "0.50"
+                }
+            ]
+        },
+        {
+            "joint": "HIP",
+            "movement": "EXTENSION",
+            "plane": "SAGITTAL",
+            "muscles": [
+                {
+                    "code": "GLUTEUS_MAXIMUS",
+                    "role": "AGONIST",
+                    "impact": "1.00"
+                },
+                { "code": "HAMSTRINGS", "role": "SYNERGIST", "impact": "0.80" },
+                {
+                    "code": "RECTUS_ABDOMINIS",
+                    "role": "FIXATOR",
+                    "impact": "0.40"
+                }
+            ]
+        },
+        {
+            "joint": "HIP",
+            "movement": "FLEXION",
+            "plane": "SAGITTAL",
+            "muscles": [
+                {
+                    "code": "RECTUS_ABDOMINIS",
+                    "role": "SYNERGIST",
+                    "impact": "0.40"
+                },
+                {
+                    "code": "GLUTEUS_MAXIMUS",
+                    "role": "ANTAGONIST",
+                    "impact": "0.50"
+                }
+            ]
+        },
+        {
+            "joint": "HIP",
+            "movement": "ABDUCTION",
+            "plane": "FRONTAL",
+            "muscles": [
+                {
+                    "code": "GLUTEUS_MEDIUS",
+                    "role": "AGONIST",
+                    "impact": "1.00"
+                },
+                {
+                    "code": "GLUTEUS_MAXIMUS",
+                    "role": "SYNERGIST",
+                    "impact": "0.30"
+                }
+            ]
+        },
+        {
+            "joint": "KNEE",
+            "movement": "FLEXION",
+            "plane": "SAGITTAL",
+            "muscles": [
+                { "code": "HAMSTRINGS", "role": "AGONIST", "impact": "1.00" },
+                {
+                    "code": "GASTROCNEMIUS",
+                    "role": "SYNERGIST",
+                    "impact": "0.50"
+                },
+                { "code": "QUADRICEPS", "role": "ANTAGONIST", "impact": "0.40" }
+            ]
+        },
+        {
+            "joint": "KNEE",
+            "movement": "EXTENSION",
+            "plane": "SAGITTAL",
+            "muscles": [
+                { "code": "QUADRICEPS", "role": "AGONIST", "impact": "1.00" },
+                { "code": "HAMSTRINGS", "role": "ANTAGONIST", "impact": "0.40" }
+            ]
+        },
+        {
+            "joint": "ANKLE",
+            "movement": "PLANTARFLEXION",
+            "plane": "SAGITTAL",
+            "muscles": [
+                {
+                    "code": "GASTROCNEMIUS",
+                    "role": "AGONIST",
+                    "impact": "1.00"
+                },
+                { "code": "SOLEUS", "role": "AGONIST", "impact": "0.90" },
+                {
+                    "code": "TIBIALIS_ANTERIOR",
+                    "role": "ANTAGONIST",
+                    "impact": "0.40"
+                }
+            ]
+        },
+        {
+            "joint": "ANKLE",
+            "movement": "DORSIFLEXION",
+            "plane": "SAGITTAL",
+            "muscles": [
+                {
+                    "code": "TIBIALIS_ANTERIOR",
+                    "role": "AGONIST",
+                    "impact": "1.00"
+                },
+                {
+                    "code": "GASTROCNEMIUS",
+                    "role": "ANTAGONIST",
+                    "impact": "0.40"
+                }
             ]
         }
     ]

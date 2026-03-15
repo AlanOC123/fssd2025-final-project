@@ -1,47 +1,35 @@
 {
-    "phases": ["Concentric", "Eccentric", "Isometric"],
-
-    "ranges_of_motion": [
-        { "name": "Full ROM", "impact": 1.0 },
-        { "name": "Lengthened Partial", "impact": 1.2 },
-        { "name": "Shortened Partial", "impact": 0.8 },
-        { "name": "Peak Contraction", "impact": 0.5 }
+    "exercise_phases": [
+        { "code": "CONCENTRIC", "label": "Concentric" },
+        { "code": "ECCENTRIC", "label": "Eccentric" },
+        { "code": "ISOMETRIC", "label": "Isometric" }
     ],
-
+    "ranges_of_motion": [
+        { "code": "FULL", "label": "Full ROM", "impact": "1.00" },
+        { "code": "PARTIAL", "label": "Partial ROM", "impact": "0.80" }
+    ],
     "exercises": [
         {
             "name": "Barbell Squat",
             "api_name": "Barbell Squat",
-            "level": "Intermediate",
+            "level": "INTERMEDIATE",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Knee",
-                            "action": "Extension",
-                            "rom": "Full ROM"
+                            "joint": "KNEE",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
                         },
-                        {
-                            "joint": "Hip",
-                            "action": "Extension",
-                            "rom": "Full ROM"
-                        }
+                        { "joint": "HIP", "action": "EXTENSION", "rom": "FULL" }
                     ]
                 },
                 {
-                    "phase": "Eccentric",
+                    "phase": "ECCENTRIC",
                     "contributions": [
-                        {
-                            "joint": "Knee",
-                            "action": "Flexion",
-                            "rom": "Full ROM"
-                        },
-                        {
-                            "joint": "Hip",
-                            "action": "Flexion",
-                            "rom": "Full ROM"
-                        }
+                        { "joint": "KNEE", "action": "FLEXION", "rom": "FULL" },
+                        { "joint": "HIP", "action": "FLEXION", "rom": "FULL" }
                     ]
                 }
             ]
@@ -49,36 +37,32 @@
         {
             "name": "Barbell Bench Press",
             "api_name": "Barbell Bench Press - Medium Grip",
-            "level": "Intermediate",
+            "level": "INTERMEDIATE",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Shoulder",
-                            "action": "Horizontal Adduction",
-                            "rom": "Full ROM"
+                            "joint": "SHOULDER",
+                            "action": "HORIZONTAL_ADDUCTION",
+                            "rom": "FULL"
                         },
                         {
-                            "joint": "Elbow",
-                            "action": "Extension",
-                            "rom": "Full ROM"
+                            "joint": "ELBOW",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
                         }
                     ]
                 },
                 {
-                    "phase": "Eccentric",
+                    "phase": "ECCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Shoulder",
-                            "action": "Horizontal Abduction",
-                            "rom": "Full ROM"
+                            "joint": "SHOULDER",
+                            "action": "HORIZONTAL_ABDUCTION",
+                            "rom": "FULL"
                         },
-                        {
-                            "joint": "Elbow",
-                            "action": "Flexion",
-                            "rom": "Full ROM"
-                        }
+                        { "joint": "ELBOW", "action": "FLEXION", "rom": "FULL" }
                     ]
                 }
             ]
@@ -86,21 +70,33 @@
         {
             "name": "Barbell Deadlift",
             "api_name": "Barbell Deadlift",
-            "level": "Advanced",
+            "level": "ADVANCED",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Hip",
-                            "action": "Extension",
-                            "rom": "Full ROM"
+                            "joint": "HIP",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
                         },
                         {
-                            "joint": "Knee",
-                            "action": "Extension",
-                            "rom": "Full ROM"
+                            "joint": "KNEE",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
+                        },
+                        {
+                            "joint": "SPINE",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
                         }
+                    ]
+                },
+                {
+                    "phase": "ECCENTRIC",
+                    "contributions": [
+                        { "joint": "HIP", "action": "FLEXION", "rom": "FULL" },
+                        { "joint": "KNEE", "action": "FLEXION", "rom": "FULL" }
                     ]
                 }
             ]
@@ -108,40 +104,40 @@
         {
             "name": "Bent Over Barbell Row",
             "api_name": "Bent Over Barbell Row",
-            "level": "Intermediate",
+            "level": "INTERMEDIATE",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Shoulder",
-                            "action": "Extension",
-                            "rom": "Full ROM"
+                            "joint": "SHOULDER",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
                         },
                         {
-                            "joint": "Elbow",
-                            "action": "Flexion",
-                            "rom": "Full ROM"
+                            "joint": "ELBOW",
+                            "action": "FLEXION",
+                            "rom": "FULL"
                         },
                         {
-                            "joint": "Scapula",
-                            "action": "Retraction",
-                            "rom": "Full ROM"
+                            "joint": "SCAPULA",
+                            "action": "RETRACTION",
+                            "rom": "FULL"
                         }
                     ]
                 },
                 {
-                    "phase": "Eccentric",
+                    "phase": "ECCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Shoulder",
-                            "action": "Flexion",
-                            "rom": "Full ROM"
+                            "joint": "SHOULDER",
+                            "action": "FLEXION",
+                            "rom": "FULL"
                         },
                         {
-                            "joint": "Elbow",
-                            "action": "Extension",
-                            "rom": "Full ROM"
+                            "joint": "ELBOW",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
                         }
                     ]
                 }
@@ -150,36 +146,32 @@
         {
             "name": "Seated Dumbbell Shoulder Press",
             "api_name": "Seated dumbbell shoulder press",
-            "level": "Intermediate",
+            "level": "INTERMEDIATE",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Shoulder",
-                            "action": "Abduction",
-                            "rom": "Full ROM"
+                            "joint": "SHOULDER",
+                            "action": "ABDUCTION",
+                            "rom": "FULL"
                         },
                         {
-                            "joint": "Elbow",
-                            "action": "Extension",
-                            "rom": "Full ROM"
+                            "joint": "ELBOW",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
                         }
                     ]
                 },
                 {
-                    "phase": "Eccentric",
+                    "phase": "ECCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Shoulder",
-                            "action": "Adduction",
-                            "rom": "Full ROM"
+                            "joint": "SHOULDER",
+                            "action": "ADDUCTION",
+                            "rom": "FULL"
                         },
-                        {
-                            "joint": "Elbow",
-                            "action": "Flexion",
-                            "rom": "Full ROM"
-                        }
+                        { "joint": "ELBOW", "action": "FLEXION", "rom": "FULL" }
                     ]
                 }
             ]
@@ -187,25 +179,21 @@
         {
             "name": "Dumbbell Bicep Curl",
             "api_name": "Dumbbell Bicep Curl",
-            "level": "Beginner",
+            "level": "BEGINNER",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
-                        {
-                            "joint": "Elbow",
-                            "action": "Flexion",
-                            "rom": "Full ROM"
-                        }
+                        { "joint": "ELBOW", "action": "FLEXION", "rom": "FULL" }
                     ]
                 },
                 {
-                    "phase": "Eccentric",
+                    "phase": "ECCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Elbow",
-                            "action": "Extension",
-                            "rom": "Full ROM"
+                            "joint": "ELBOW",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
                         }
                     ]
                 }
@@ -214,26 +202,22 @@
         {
             "name": "Triceps Pushdown",
             "api_name": "Triceps Pushdown - Rope Attachment",
-            "level": "Beginner",
+            "level": "BEGINNER",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Elbow",
-                            "action": "Extension",
-                            "rom": "Full ROM"
+                            "joint": "ELBOW",
+                            "action": "EXTENSION",
+                            "rom": "FULL"
                         }
                     ]
                 },
                 {
-                    "phase": "Eccentric",
+                    "phase": "ECCENTRIC",
                     "contributions": [
-                        {
-                            "joint": "Elbow",
-                            "action": "Flexion",
-                            "rom": "Full ROM"
-                        }
+                        { "joint": "ELBOW", "action": "FLEXION", "rom": "FULL" }
                     ]
                 }
             ]
@@ -241,25 +225,25 @@
         {
             "name": "Lateral Raise",
             "api_name": "Dumbbell front raise to lateral raise",
-            "level": "Beginner",
+            "level": "BEGINNER",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Shoulder",
-                            "action": "Abduction",
-                            "rom": "Shortened Partial"
+                            "joint": "SHOULDER",
+                            "action": "ABDUCTION",
+                            "rom": "PARTIAL"
                         }
                     ]
                 },
                 {
-                    "phase": "Eccentric",
+                    "phase": "ECCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Shoulder",
-                            "action": "Adduction",
-                            "rom": "Full ROM"
+                            "joint": "SHOULDER",
+                            "action": "ADDUCTION",
+                            "rom": "FULL"
                         }
                     ]
                 }
@@ -268,25 +252,25 @@
         {
             "name": "Standing Calf Raises",
             "api_name": "Standing Calf Raises",
-            "level": "Beginner",
+            "level": "BEGINNER",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Ankle",
-                            "action": "Plantarflexion",
-                            "rom": "Full ROM"
+                            "joint": "ANKLE",
+                            "action": "PLANTARFLEXION",
+                            "rom": "FULL"
                         }
                     ]
                 },
                 {
-                    "phase": "Eccentric",
+                    "phase": "ECCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Ankle",
-                            "action": "Dorsiflexion",
-                            "rom": "Full ROM"
+                            "joint": "ANKLE",
+                            "action": "DORSIFLEXION",
+                            "rom": "FULL"
                         }
                     ]
                 }
@@ -295,25 +279,25 @@
         {
             "name": "Standing Dumbbell Shrug",
             "api_name": "Standing dumbbell shrug",
-            "level": "Beginner",
+            "level": "BEGINNER",
             "movements": [
                 {
-                    "phase": "Concentric",
+                    "phase": "CONCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Scapula",
-                            "action": "Elevation",
-                            "rom": "Shortened Partial"
+                            "joint": "SCAPULA",
+                            "action": "ELEVATION",
+                            "rom": "PARTIAL"
                         }
                     ]
                 },
                 {
-                    "phase": "Eccentric",
+                    "phase": "ECCENTRIC",
                     "contributions": [
                         {
-                            "joint": "Scapula",
-                            "action": "Depression",
-                            "rom": "Full ROM"
+                            "joint": "SCAPULA",
+                            "action": "DEPRESSION",
+                            "rom": "FULL"
                         }
                     ]
                 }

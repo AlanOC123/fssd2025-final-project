@@ -1,39 +1,55 @@
 {
-    "program_phase_options": [
+    "program_statuses": [
+        { "code": "CREATING", "label": "Creating" },
+        { "code": "OUT_FOR_REVIEW", "label": "Out for Review" },
+        { "code": "READY_TO_BEGIN", "label": "Ready to Begin" },
+        { "code": "IN_PROGRESS", "label": "In Progress" },
+        { "code": "COMPLETED", "label": "Completed" },
+        { "code": "ABANDONED", "label": "Abandoned" }
+    ],
+    "phase_statuses": [
+        { "code": "PLANNED", "label": "Planned" },
+        { "code": "NEXT", "label": "Next" },
+        { "code": "ACTIVE", "label": "Active" },
+        { "code": "COMPLETED", "label": "Completed" },
+        { "code": "SKIPPED", "label": "Skipped" },
+        { "code": "ARCHIVED", "label": "Archived" }
+    ],
+    "phase_options": [
         {
-            "phase_name": "Foundation",
-            "order_index": 1,
-            "default_duration": 4,
+            "code": "FOUNDATION",
+            "label": "Foundation",
+            "default_duration_days": 28,
             "description": "Introductory phase focused on technique, joint health, and preparing the body for training stress."
         },
         {
-            "phase_name": "Accumulation",
-            "order_index": 2,
-            "default_duration": 6,
-            "description": "Focus on increasing total work capacity. Ideal for muscle growth (Hypertrophy) or endurance goals."
+            "code": "ACCUMULATION",
+            "label": "Accumulation",
+            "default_duration_days": 42,
+            "description": "Focus on increasing total work capacity. Ideal for muscle growth or endurance goals."
         },
         {
-            "phase_name": "Intensity",
-            "order_index": 3,
-            "default_duration": 4,
-            "description": "Focus on lifting heavier loads or increasing difficulty. Ideal for building Strength."
+            "code": "INTENSITY",
+            "label": "Intensity",
+            "default_duration_days": 28,
+            "description": "Focus on lifting heavier loads or increasing difficulty. Ideal for building strength."
         },
         {
-            "phase_name": "Maintenance",
-            "order_index": 4,
-            "default_duration": 4,
-            "description": "Moderate volume and intensity to preserve fitness gains during busy periods or holidays."
+            "code": "MAINTENANCE",
+            "label": "Maintenance",
+            "default_duration_days": 28,
+            "description": "Moderate volume and intensity to preserve fitness gains during busy periods."
         },
         {
-            "phase_name": "Assessment",
-            "order_index": 5,
-            "default_duration": 1,
-            "description": "A short period to re-test Personal Bests or body composition metrics."
+            "code": "ASSESSMENT",
+            "label": "Assessment",
+            "default_duration_days": 7,
+            "description": "A short period to re-test personal bests or body composition metrics."
         },
         {
-            "phase_name": "Recovery",
-            "order_index": 6,
-            "default_duration": 1,
+            "code": "RECOVERY",
+            "label": "Recovery",
+            "default_duration_days": 7,
             "description": "Reduced training load to allow for full systemic recovery."
         }
     ]

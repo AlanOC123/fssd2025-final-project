@@ -2,11 +2,11 @@
     "program_name": "Winter Hypertrophy Protocol",
     "client_email": "demo@apex.com",
     "routines": {
-        "Accumulation": {
+        "ACCUMULATION": {
             "schedule": [0, 2, 4],
             "workouts": [
                 {
-                    "name": "Volume A (Upper)",
+                    "name": "Volume Upper A",
                     "exercises": [
                         {
                             "name": "Barbell Bench Press",
@@ -18,21 +18,28 @@
                         {
                             "name": "Bent Over Barbell Row",
                             "sets": 4,
-                            "reps": 12,
+                            "reps": 10,
                             "start_weight": 50,
                             "rpe": 7
                         },
                         {
                             "name": "Dumbbell Bicep Curl",
                             "sets": 3,
-                            "reps": 15,
-                            "start_weight": 12,
+                            "reps": 12,
+                            "start_weight": 14,
+                            "rpe": 8
+                        },
+                        {
+                            "name": "Triceps Pushdown",
+                            "sets": 3,
+                            "reps": 12,
+                            "start_weight": 20,
                             "rpe": 8
                         }
                     ]
                 },
                 {
-                    "name": "Volume B (Lower)",
+                    "name": "Volume Lower A",
                     "exercises": [
                         {
                             "name": "Barbell Squat",
@@ -42,11 +49,11 @@
                             "rpe": 7
                         },
                         {
-                            "name": "Romanian Deadlift",
+                            "name": "Barbell Deadlift",
                             "sets": 3,
-                            "reps": 12,
-                            "start_weight": 80,
-                            "rpe": 7
+                            "reps": 8,
+                            "start_weight": 110,
+                            "rpe": 8
                         },
                         {
                             "name": "Standing Calf Raises",
@@ -59,32 +66,39 @@
                 }
             ]
         },
-        "Intensity": {
-            "schedule": [0, 3, 5],
+        "INTENSITY": {
+            "schedule": [0, 3],
             "workouts": [
                 {
-                    "name": "Intensity - Full Body",
+                    "name": "Strength Full Body",
                     "exercises": [
                         {
                             "name": "Barbell Squat",
-                            "sets": 3,
-                            "reps": 5,
+                            "sets": 4,
+                            "reps": 4,
                             "start_weight": 110,
                             "rpe": 9
                         },
                         {
                             "name": "Barbell Bench Press",
-                            "sets": 3,
-                            "reps": 5,
+                            "sets": 4,
+                            "reps": 4,
                             "start_weight": 80,
                             "rpe": 9
                         },
                         {
                             "name": "Barbell Deadlift",
-                            "sets": 2,
-                            "reps": 5,
+                            "sets": 3,
+                            "reps": 3,
                             "start_weight": 140,
                             "rpe": 9
+                        },
+                        {
+                            "name": "Bent Over Barbell Row",
+                            "sets": 3,
+                            "reps": 5,
+                            "start_weight": 75,
+                            "rpe": 8
                         }
                     ]
                 }

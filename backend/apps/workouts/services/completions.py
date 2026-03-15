@@ -21,13 +21,13 @@ class WorkoutCompletionService:
     @classmethod
     def _validate_client(cls, client_user):
         if not client_user:
-            raise ValidationError("Missing client user.")
-
-        if not client_user.is_client:
-            raise ValidationError("Only a client can record a workout completion.")
+            raise ValidationError("Missing clien user.")
 
         if not hasattr(client_user, "client_profile"):
             raise ValidationError("Malformed client user given.")
+
+        if not client_user.is_client:
+            raise ValidationError("Only a client can record a workout completion.")
 
         return client_user
 
@@ -150,7 +150,37 @@ class WorkoutCompletionService:
 
         session.completed_at = cls._now()
         session.save(update_fields=["completed_at", "updated_at"])
+
+        # Compute and store analytics snapshots for each exercise in this session.
+        # Import here to avoid circular imports between workouts and analytics.
+        cls._compute_session_snapshots(session)
+
         return session
+
+    @classmethod
+    def _compute_session_snapshots(cls, session: WorkoutCompletionRecord) -> None:
+        """
+        After a session completes, compute and upsert an ExerciseSessionSnapshot
+        for each unique exercise that had non-skipped sets in this session.
+        Runs inside the same transaction as finish_workout.
+        """
+        from apps.analytics.services.snapshot import compute_and_save_snapshot
+
+        program = session.workout.program_phase.program
+
+        exercises = set(
+            er.workout_exercise.exercise
+            for er in session.exercise_records.filter(
+                is_skipped=False,
+            ).select_related("workout_exercise__exercise")
+        )
+
+        for exercise in exercises:
+            compute_and_save_snapshot(
+                program=program,
+                exercise=exercise,
+                session=session,
+            )
 
     #  Exercise Actions
 

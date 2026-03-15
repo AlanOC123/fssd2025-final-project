@@ -3,28 +3,34 @@
     "client_email": "demo@apex.com",
     "program": {
         "name": "Winter Hypertrophy Protocol",
-        "goal": "Muscle Gain",
-        "level": "Intermediate"
+        "goal_code": "HYPERTROPHY",
+        "level_code": "INTERMEDIATE"
     },
     "phases": [
         {
-            "option_name": "Accumulation",
-            "custom_duration": 4,
-            "is_active": false,
-            "is_completed": true,
-            "completed_at_offset_days": 7
+            "option_code": "ACCUMULATION",
+            "phase_name": "Volume Block",
+            "phase_goal": "Build total work capacity and set a strong hypertrophy foundation",
+            "sequence_order": 1,
+            "duration_days": 28,
+            "status": "COMPLETED",
+            "completed_days_ago": 14
         },
         {
-            "option_name": "Intensity",
-            "custom_duration": 6,
-            "is_active": true,
-            "is_completed": false
+            "option_code": "INTENSITY",
+            "phase_name": "Strength Block",
+            "phase_goal": "Drive progressive overload with heavier loads across compound movements",
+            "sequence_order": 2,
+            "duration_days": 28,
+            "status": "ACTIVE"
         },
         {
-            "option_name": "Recovery",
-            "custom_duration": 1,
-            "is_active": false,
-            "is_completed": false
+            "option_code": "RECOVERY",
+            "phase_name": "Deload Week",
+            "phase_goal": "Reduce fatigue and allow full systemic recovery before assessment",
+            "sequence_order": 3,
+            "duration_days": 7,
+            "status": "PLANNED"
         }
     ]
 }

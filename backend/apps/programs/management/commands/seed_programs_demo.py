@@ -6,9 +6,17 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from apps.programs.models import Program, ProgramPhase, ProgramPhaseOption
-
-# Import models
+from apps.programs.constants import (
+    ProgramPhaseStatusesVocabulary,
+    ProgramStatusesVocabulary,
+)
+from apps.programs.models import (
+    Program,
+    ProgramPhase,
+    ProgramPhaseOption,
+    ProgramPhaseStatusOption,
+    ProgramStatusOption,
+)
 from apps.users.models import (
     ClientProfile,
     ExperienceLevel,
@@ -21,7 +29,7 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = "Seeds a Demo Program linked to the Demo Trainer and Client"
+    help = "Seeds a demo program linked to the demo trainer and client"
 
     def handle(self, *args, **kwargs):
         base_dir = os.path.dirname(__file__)
@@ -32,92 +40,145 @@ class Command(BaseCommand):
                 data = json.load(f)
                 self.stdout.write("Seeding Program Demo Data...")
 
-                # Find the Membership (The Bridge) ---
-                trainer_email = data["trainer_email"]
-                client_email = data["client_email"]
+            # ── Resolve membership ────────────────────────────────────────────
 
-                try:
-                    trainer_user = User.objects.get(email=trainer_email)
-                    client_user = User.objects.get(email=client_email)
-
-                    # Get Profiles
-                    t_profile = TrainerProfile.objects.get(user=trainer_user)
-                    c_profile = ClientProfile.objects.get(user=client_user)
-
-                    # Find the specific Active Membership
-                    membership = TrainerClientMembership.objects.get(
-                        trainer=t_profile,
-                        client=c_profile,
-                        status__status_name="ACTIVE",
-                    )
-                except Exception as e:
-                    self.stdout.write(
-                        self.style.ERROR(f"Membership Lookup Failed: {e}")
-                    )
-                    return
-
-                # Create the Program ---
-                prog_data = data["program"]
-
-                # Fetch Lookups
-                goal_obj = TrainingGoal.objects.get(goal_name=prog_data["goal"])
-                level_obj = ExperienceLevel.objects.get(level_name=prog_data["level"])
-
-                program, created = Program.objects.get_or_create(
-                    program_name=prog_data["name"],
-                    trainer_client_membership=membership,
-                    defaults={"training_goal": goal_obj, "experience_level": level_obj},
+            try:
+                trainer_user = User.objects.get(email=data["trainer_email"])
+                client_user = User.objects.get(email=data["client_email"])
+                t_profile = TrainerProfile.objects.get(user=trainer_user)
+                c_profile = ClientProfile.objects.get(user=client_user)
+                membership = TrainerClientMembership.objects.get(
+                    trainer=t_profile,
+                    client=c_profile,
+                    status__code="ACTIVE",
                 )
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Membership lookup failed: {e}"))
+                return
 
-                if created:
-                    self.stdout.write(f"Created Program: {program.program_name}")
-                else:
-                    self.stdout.write("Program already exists")
+            # ── Create program ────────────────────────────────────────────────
 
-                # Create Phases ---
-                # Clear existing phases from idempotency
+            now = timezone.now()
+            prog_data = data["program"]
+
+            try:
+                goal_obj = TrainingGoal.objects.get(code=prog_data["goal_code"])
+                level_obj = ExperienceLevel.objects.get(code=prog_data["level_code"])
+            except Exception as e:
+                self.stdout.write(
+                    self.style.ERROR(f"Lookup data missing: {e} — run seed_users first")
+                )
+                return
+
+            status_in_progress = ProgramStatusOption.objects.get(
+                code=ProgramStatusesVocabulary.IN_PROGRESS
+            )
+
+            program, created = Program.objects.get_or_create(
+                program_name=prog_data["name"],
+                trainer_client_membership=membership,
+                defaults={
+                    "training_goal": goal_obj,
+                    "experience_level": level_obj,
+                    "status": status_in_progress,
+                    "created_by_trainer": trainer_user,
+                    "last_edited_by": trainer_user,
+                    "submitted_for_review_at": now,
+                    "reviewed_at": now,
+                    "started_at": now,
+                },
+            )
+
+            if created:
+                self.stdout.write(f"    Created Program: {program.program_name}")
+            else:
+                self.stdout.write(f"    Program already exists: {program.program_name}")
+                # Clear and rebuild phases for idempotency
                 program.phases.all().delete()
 
-                for phase_data in data["phases"]:
-                    option_name = phase_data["option_name"]
+            # ── Create phases ─────────────────────────────────────────────────
 
-                    try:
-                        # Find the template
-                        option_obj = ProgramPhaseOption.objects.get(
-                            phase_name=option_name
+            today = timezone.localdate()
+
+            for phase_data in data["phases"]:
+                option_code = phase_data["option_code"]
+                status_code = phase_data["status"]
+                duration_days = phase_data["duration_days"]
+                seq = phase_data["sequence_order"]
+
+                try:
+                    option_obj = ProgramPhaseOption.objects.get(code=option_code)
+                except ProgramPhaseOption.DoesNotExist:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"ProgramPhaseOption '{option_code}' not found — run seed_programs first"
                         )
+                    )
+                    continue
 
-                        # Handle completion dates
-                        completed_at = None
-                        if phase_data.get("is_completed"):
-                            offset = phase_data.get("completed_at_offset_days", 0)
-                            completed_at = timezone.now() - timedelta(days=offset)
+                status_obj = ProgramPhaseStatusOption.objects.get(code=status_code)
 
-                        # Create the Phase Instance
-                        phase_obj = ProgramPhase.objects.create(
-                            program=program,
-                            phase_option=option_obj,
-                            custom_duration=phase_data["custom_duration"],
-                            is_active=phase_data["is_active"],
-                            is_completed=phase_data["is_completed"],
-                            completed_at=completed_at,
-                        )
+                # Planned start/end are relative to today and sequence order
+                planned_start = today - timedelta(days=28 * (3 - seq))
+                planned_end = planned_start + timedelta(days=duration_days)
 
-                        status = "Active" if phase_data["is_active"] else "Pending"
-                        status = "Done" if phase_data["is_completed"] else status
+                # Status-specific timestamps
+                actual_start = None
+                actual_end = None
+                started_at = None
+                completed_at = None
 
-                        self.stdout.write(f"Added Phase: {option_name}\
-                                ({phase_data['custom_duration']} weeks) [{status}]")
+                if status_code == ProgramPhaseStatusesVocabulary.COMPLETED:
+                    days_ago = phase_data.get("completed_days_ago", 14)
+                    actual_start = today - timedelta(days=days_ago + duration_days)
+                    actual_end = today - timedelta(days=days_ago)
+                    started_at = now - timedelta(days=days_ago + duration_days)
+                    completed_at = now - timedelta(days=days_ago)
 
-                    except ProgramPhaseOption.DoesNotExist:
-                        self.stdout.write(
-                            self.style.ERROR(f"Phase Option '{option_name}' not found.\
-                                    Did you run seed_programs?")
-                        )
+                elif status_code == ProgramPhaseStatusesVocabulary.ACTIVE:
+                    actual_start = today - timedelta(days=7)
+                    started_at = now - timedelta(days=7)
+
+                phase_kwargs = dict(
+                    program=program,
+                    phase_option=option_obj,
+                    phase_name=phase_data.get("phase_name", ""),
+                    phase_goal=phase_data.get("phase_goal", ""),
+                    sequence_order=seq,
+                    status=status_obj,
+                    planned_start_date=planned_start,
+                    planned_end_date=planned_end,
+                    created_by_trainer=trainer_user,
+                    last_edited_by=trainer_user,
+                )
+
+                if actual_start:
+                    phase_kwargs["actual_start_date"] = actual_start
+                if actual_end:
+                    phase_kwargs["actual_end_date"] = actual_end
+                if started_at:
+                    phase_kwargs["started_at"] = started_at
+                if completed_at:
+                    phase_kwargs["completed_at"] = completed_at
+
+                if status_code == ProgramPhaseStatusesVocabulary.SKIPPED:
+                    phase_kwargs["skipped_at"] = now
+                    phase_kwargs["skipped_reason"] = "Demo skip"
+
+                if status_code == ProgramPhaseStatusesVocabulary.ARCHIVED:
+                    phase_kwargs["archived_at"] = now
+                    phase_kwargs["archived_reason"] = "Demo archive"
+
+                ProgramPhase.objects.create(**phase_kwargs)
+                self.stdout.write(
+                    f"    Created Phase: {option_obj.label} [{status_code}]"
+                )
 
         except FileNotFoundError:
             self.stdout.write(self.style.ERROR(f"Could not find file at: {file_path}"))
+            return
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Error seeding program demo: {e}"))
+            return
 
-        self.stdout.write(self.style.SUCCESS("Program Demo Environment Ready!"))
+        self.stdout.write(self.style.SUCCESS("Program Demo Environment Ready"))
