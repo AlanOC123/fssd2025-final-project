@@ -1,30 +1,33 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import checker from "vite-plugin-checker";
+import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
-  server: {
-    host: true,
-    port: 5173,
-    watch: {
-      usePolling: true
+    plugins: [
+        tanstackRouter({
+            routesDirectory: "./src/routes",
+            generatedRouteTree: "./src/routeTree.gen",
+        }),
+        react(),
+        tailwindcss(),
+        checker({ typescript: true }),
+    ],
+    resolve: {
+        alias: {
+            "@": path.resolve(__dirname, "./src"),
+        },
     },
-    proxy: {
-      '/api': {
-        target: "http://web:8000",
-        changeOrigin: true,
-        secure: false
-      },
-      '/admin': {
-        target: "http://web:8000",
-        changeOrigin: true,
-        secure: false
-      },
-      '/static': {
-        target: "http://web:8000",
-        changeOrigin: true,
-        secure: false
-      }
-    }
-  }
-})
+    server: {
+        host: "0.0.0.0",
+        port: 5173,
+        proxy: {
+          "/api": {
+            target: 'http://web:8000',
+            changeOrigin: true
+          }
+        }
+    },
+});

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.cache/
+.vite/
+.git/
+.env*
+*.log
+coverage/
+storybook-static/
+.pnpm-store/
