@@ -2,7 +2,7 @@
 cd frontend && pnpm lint-staged
 
 # Backend — Ruff lint and Black format on staged Python files
-cd ../backend && source .venv/bin/activate && ruff check . && black --check .
+cd ../backend && source .venv/bin/activate && ruff check --fix --unsafe-fixes . && black --check .
 
 # Backend — run Django tests if any Python files are staged
 STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$')
