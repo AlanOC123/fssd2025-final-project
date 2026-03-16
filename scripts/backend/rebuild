@@ -1,0 +1,27 @@
+#!/bin/bash
+# Usage: ./scripts/backend/rebuild
+
+# Ensure the script stops on errors
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Starting rebuild of docker container"
+
+echo "1/4 Clearing cache"
+# Clear the cache
+docker builder prune -a -f
+
+echo "2/4 Shutting Down Containers"
+# Stop everything
+docker-compose down
+
+echo "3/4 Rebuilding From Scratch"
+# Rebuild web container (make sure it doesnt use cached image)
+docker-compose build --no-cache web
+
+echo "4/4 Rerunning Container"
+# Restart container
+docker-compose up -d
+
+echo "Build Complete. New Dependencies Installed"

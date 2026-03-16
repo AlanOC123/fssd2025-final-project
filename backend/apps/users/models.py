@@ -212,6 +212,11 @@ class ClientProfile(ApexModel):
         on_delete=models.SET_NULL,
     )
 
+    avatar = models.ImageField(
+        upload_to="client_avatars/",
+        blank=True
+    )
+
     def __str__(self):
         return f"Client: {self.user.email}"
 

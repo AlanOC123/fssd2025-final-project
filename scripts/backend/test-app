@@ -1,0 +1,11 @@
+#!/bin/bash
+# Usage: ./scripts/backend/test-app [app_name]
+# Example ./scripts/backend/test-app users
+
+# Ensure the script stops on errors
+set -e
+
+cd "$(dirname "$0")/../.."
+
+# Run the command in the 'web' container and remove it after
+docker-compose run --rm web pytest --create-db "apps/$@"

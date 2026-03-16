@@ -13,6 +13,7 @@
         "prepare": "HUSKY_GIT_DIR=../.git husky .husky"
     },
     "dependencies": {
+        "@fontsource-variable/inter": "^5.2.8",
         "@tanstack/react-form": "^1.28.5",
         "@tanstack/react-query": "^5.90.21",
         "@tanstack/react-router": "^1.167.1",

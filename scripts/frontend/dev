@@ -1,0 +1,10 @@
+#!/bin/bash
+# Usage: ./scripts/frontend/dev
+# Starts the client container in isolation (assumes backend already running)
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Starting frontend dev server..."
+docker-compose up client

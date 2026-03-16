@@ -1,0 +1,23 @@
+#!/bin/bash
+# Usage: ./scripts/frontend/install
+# Installs a new package and syncs dependencies in docker
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+if ! command -v pnpm &> /dev/null; then
+    echo "Error: pnpm is not installed locally."
+    echo "Install it with: brew install pnpm (mac) or npm install -g pnpm"
+    echo "If using a different package manager do not use this script"
+    exit 1
+fi
+
+
+echo "Installing package"
+pnpm add "$@" --prefix frontend
+
+echo "Synching dependencies..."
+docker-compose run --rm client sh -c "pnpm install"
+
+echo "Done."

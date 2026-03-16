@@ -1,0 +1,12 @@
+#!/bin/bash
+# Usage: ./scripts/frontend/lint
+# Runs ESLint inside the client container
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Linting frontend..."
+docker-compose run --rm client pnpm lint
+
+echo "Lint passed."

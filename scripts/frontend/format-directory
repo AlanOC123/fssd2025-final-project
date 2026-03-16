@@ -1,0 +1,12 @@
+#!/bin/bash
+# Usage: ./scripts/frontend/format
+# Runs Prettier across src/ inside the client container
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Formatting frontend..."
+docker-compose run --rm client pnpm format
+
+echo "Formatting complete."

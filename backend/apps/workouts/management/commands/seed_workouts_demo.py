@@ -1,10 +1,10 @@
 import json
 import os
 from datetime import timedelta
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-from decimal import Decimal
 from django.utils import timezone
 
 from apps.exercises.models import Exercise

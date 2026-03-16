@@ -1,0 +1,13 @@
+#!/bin/bash
+# Usage: ./scripts/frontend/install
+# Installs all dependencies from lock file
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Installing frontend dependencies..."
+docker-compose run --rm client sh -c "pnpm install"
+
+echo "Done."
+

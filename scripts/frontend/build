@@ -1,0 +1,12 @@
+#!/bin/bash
+# Usage: ./scripts/frontend/build
+# Runs a production build inside the client container
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Building frontend for production..."
+docker-compose run --rm client pnpm build
+
+echo "Build complete."

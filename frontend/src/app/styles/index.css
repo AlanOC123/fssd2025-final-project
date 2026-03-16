@@ -1,0 +1,123 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* ----------------------------------------
+ * Base — Additions on top of Preflight
+ * ---------------------------------------- */
+@layer base {
+    html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        scroll-behavior: smooth;
+    }
+
+    body {
+        font-family: var(--font-sans);
+        font-size: var(--text-base);
+        line-height: 1.6;
+        background-color: var(--color-grey-950);
+        color: var(--color-grey-100);
+        min-height: 100dvh;
+    }
+
+    /* Focus — visible only on keyboard nav */
+    :focus-visible {
+        outline: 2px solid var(--color-brand-500);
+        outline-offset: 2px;
+        border-radius: var(--radius-sm);
+    }
+
+    /* Typography defaults */
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: 600;
+        line-height: 1.25;
+        color: var(--color-grey-50);
+    }
+
+    p {
+        color: var(--color-grey-300);
+    }
+
+    a {
+        color: var(--color-brand-400);
+        text-decoration: none;
+        transition: color var(--duration-fast) var(--ease-smooth);
+    }
+
+    a:hover {
+        color: var(--color-brand-300);
+    }
+
+    /* Code */
+    code, pre, kbd {
+        font-family: var(--font-mono);
+        font-size: 0.9em;
+    }
+
+    /* Autofill — prevents Chrome painting a white box over dark inputs */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px var(--color-grey-800) inset;
+        -webkit-text-fill-color: var(--color-grey-100);
+        caret-color: var(--color-grey-100);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--color-grey-900);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--color-grey-600);
+        border-radius: var(--radius-3xl);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-grey-500);
+    }
+
+    /* Selection */
+    ::selection {
+        background-color: rgb(170 59 255 / 0.3);
+        color: var(--color-grey-50);
+    }
+}
+
+/* ----------------------------------------
+ * Utilities — Custom helpers
+ * ---------------------------------------- */
+@layer utilities {
+    /* Visually hidden but accessible to screen readers */
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* Smooth transitions on interactive elements */
+    .transition-base {
+        transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+        transition-duration: var(--duration-base);
+        transition-timing-function: var(--ease-smooth);
+    }
+
+    /* Glass card effect */
+    .glass {
+        background: rgb(26 26 36 / 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgb(255 255 255 / 0.06);
+    }
+}

@@ -55,16 +55,18 @@ class ClientProfileSerializer(ApexSerializer):
 
     class Meta(ApexSerializer.Meta):
         model = ClientProfile
-        fields = ApexSerializer.Meta.fields + ["goal", "level", "goal_id", "level_id"]
+        fields = ApexSerializer.Meta.fields + [
+            "goal",
+            "level",
+            "goal_id",
+            "level_id",
+            "avatar",
+        ]
         read_only_fields = ApexSerializer.Meta.read_only_fields + ["goal", "level"]
 
 
 class TrainerProfileSerializer(ApexSerializer):
     """Used for matching trainers with clients"""
-
-    first_name = serializers.CharField(source="user.first_name", read_only=True)
-    last_name = serializers.CharField(source="user.last_name", read_only=True)
-    email = serializers.CharField(source="user.email", read_only=True)
 
     accepted_goals = TrainingGoalSerializer(many=True, read_only=True)
     accepted_levels = ExperienceLevelSerializer(many=True, read_only=True)
@@ -88,24 +90,39 @@ class TrainerProfileSerializer(ApexSerializer):
     class Meta(ApexSerializer.Meta):
         model = TrainerProfile
         fields = ApexSerializer.Meta.fields + [
-            "first_name",
-            "last_name",
-            "email",
             "accepted_goals",
             "accepted_levels",
             "accepted_goal_ids",
             "accepted_level_ids",
             "company",
             "website",
+            "logo",
         ]
 
         read_only_fields = ApexSerializer.Meta.read_only_fields + [
-            "first_name",
-            "last_name",
-            "email",
             "accepted_goals",
             "accepted_levels",
         ]
+
+
+class TrainerMatchingSerializer(ApexSerializer):
+    first_name = serializers.CharField(source="user.first_name", read_only=True)
+    last_name = serializers.CharField(source="user.last_name", read_only=True)
+    email = serializers.CharField(source="user.email", read_only=True)
+
+    accepted_goals = TrainingGoalSerializer(many=True, read_only=True)
+    accepted_levels = ExperienceLevelSerializer(many=True, read_only=True)
+
+    class Meta(ApexSerializer.Meta):
+        model = TrainerProfile
+        fields = ApexSerializer.Meta.fields + [
+            "first_name",
+            "last_name",
+            "accepted_goals",
+            "accepted_levels",
+        ]
+
+        read_only_fields = ApexSerializer.Meta.fields + fields
 
 
 class CustomUserSerializer(ApexSerializer):

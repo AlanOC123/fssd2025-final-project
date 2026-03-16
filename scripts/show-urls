@@ -1,9 +1,0 @@
-#!/bin/bash
-# Usage: ./scripts/show-urls
-# Example: ./scripts/show-urls
-
-# Ensure the script stops on errors
-set -e
-
-# Spin up the container, print urls and remove it
-docker-compose run --rm web sh -c "python manage.py show_urls > /app/urls.txt"

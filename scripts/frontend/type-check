@@ -1,0 +1,12 @@
+#!/bin/bash
+# Usage: ./scripts/frontend/type-check
+# Runs tsc --noEmit inside the client container
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Type checking frontend..."
+docker-compose run --rm client pnpm type-check
+
+echo "Type check passed."

@@ -21,6 +21,7 @@ from .serializers import (
     TrainerClientMembershipSerializer,
     TrainerProfileSerializer,
     TrainingGoalSerializer,
+    TrainerMatchingSerializer
 )
 from .services.membership import MembershipService
 
@@ -129,7 +130,7 @@ class TrainerClientMembershipViewset(
 
 
 class TrainerMatchingViewset(viewsets.ReadOnlyModelViewSet):
-    serializer_class = TrainerProfileSerializer
+    serializer_class = TrainerMatchingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]

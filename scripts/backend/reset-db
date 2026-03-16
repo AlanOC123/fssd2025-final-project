@@ -1,0 +1,49 @@
+#!/bin/bash
+# Usage: ./scripts/backend/reset-db
+
+# Ensure the script stops on errors
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "RESETTING DATABASE..."
+
+# Stop containers and remove orphans
+docker-compose down --remove-orphans
+
+# FORCE DELETE the specific volume
+echo "🗑️   Cleaning volumes..."
+docker volume rm apex_pg_data 2>/dev/null || true
+docker volume prune -f
+
+# Rebuild
+echo "🏗️   Rebuilding web container..."
+docker-compose build --no-cache web
+
+# Start ONLY the DB first to let it initialize
+echo "🔥  Starting Database..."
+docker-compose up -d db
+
+# Loop until the container reports "healthy"
+echo "⏳  Waiting for Database to be ready..."
+until [ "`docker inspect -f {{.State.Health.Status}} apex_db`" == "healthy" ]; do
+    echo "    ... DB is warming up (Health: `docker inspect -f {{.State.Health.Status}} apex_db`)"
+    sleep 2;
+done
+echo "DATABASE CONNECTION ESTABLISHED AND RUNNING"
+
+# Start the rest of the stack
+docker-compose up -d web client
+
+# Run Django Commands
+echo "running migrations..."
+docker-compose run --rm web python manage.py makemigrations
+docker-compose run --rm web python manage.py migrate
+
+echo "SEEDING DATABASE..."
+docker-compose run --rm web python manage.py seed_db
+
+echo "SEEDING DEMO ENVIRONMENT..."
+docker-compose run --rm web python manage.py seed_demo
+
+echo "🚀  SYSTEM RESET COMPLETE. READY FOR LOGIN."

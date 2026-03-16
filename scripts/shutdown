@@ -1,5 +1,0 @@
-#!/bin/bash
-# Usage: ./scripts/shutdown
-
-echo "SHUTTING DOWN CONTAINER"
-docker-compose down

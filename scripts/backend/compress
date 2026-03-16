@@ -1,0 +1,28 @@
+#!/bin/bash
+# Usage: ./scripts/backend/compress
+
+# Ensure the script stops on errors
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Attempting to compress backend folder."
+
+if [ ! -d "backend" ]; then
+    echo "Error: backend directory not found"
+    exit 1
+fi
+
+du -sh backend
+
+rm -f backend.zip
+
+zip -rq backend.zip backend \
+    -x "*/__pycache__/*" \
+    "*/.git/*" \
+    "*/.env*" \
+    "*/.venv/*" \
+    "*/.pytest_cache/*" \
+    "*/.DS_Store"
+
+echo "Backend compressed to backend.zip"

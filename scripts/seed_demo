@@ -1,5 +1,0 @@
-#!/bin/bash
-# Usage: ./scripts/seed_demo
-
-echo "SEEDING DEMO ENVIRONMENT"
-docker-compose run --rm web python manage.py seed_demo
