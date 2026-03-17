@@ -8,3 +8,17 @@ dist/
 coverage/
 storybook-static/
 .pnpm-store/
+
+# TanStack Router
+.tanstack/
+src/routeTree.gen.ts
+
+# Editor & OS
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.sw?
+
+# TypeScript build info
+*.tsbuildinfo

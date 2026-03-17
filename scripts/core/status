@@ -1,0 +1,21 @@
+#!/bin/bash
+# Usage: ./scripts/core/status
+# Shows the current state of all Apex containers and volumes.
+# Get a quick health check before spinning things up
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "=== Containers ==="
+docker-compose ps
+
+echo ""
+echo "=== Volumes ==="
+docker volume ls | grep apex || echo "No apex volumes found."
+
+echo ""
+echo "=== DB Health ==="
+docker inspect -f "{{.State.Health.Status}}" apex_db 2>/dev/null \
+    && echo "" \
+    || echo "DB container not running."

@@ -10,7 +10,6 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.analytics.models import ExerciseSessionSnapshot
 from factories import (
     WorkoutCompletionRecordFactory,
     WorkoutExerciseCompletionRecordFactory,

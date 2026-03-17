@@ -1,0 +1,25 @@
+#!/bin/bash
+# Usage: ./scripts/db/migrate
+# Runs makemigrations then migrate against the running stack.
+# Does NOT touch volumes or restart containers — stack must already be up.
+#
+# If the stack isn't running, start it first:
+#   ./scripts/db/start && ./scripts/backend/start
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+# Sanity check — db must be running
+if [ "$(docker inspect -f '{{.State.Health.Status}}' apex_db 2>/dev/null)" != "healthy" ]; then
+    echo "❌ Database is not healthy. Run ./scripts/db/start first."
+    exit 1
+fi
+
+echo "1/2 Making migrations..."
+docker-compose run --rm web python manage.py makemigrations
+
+echo "2/2 Applying migrations..."
+docker-compose run --rm web python manage.py migrate
+
+echo "✅ Migrations complete."

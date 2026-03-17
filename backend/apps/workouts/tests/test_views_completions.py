@@ -119,7 +119,7 @@ class TestWorkoutSessionViewSet:
         response = trainer_api_client.get(url)
 
         assert response.status_code == 200
-        assert len(response.data) == 1
+        assert len(response.data["results"]) == 1
 
     def test_response_includes_duration_s(
         self, client_api_client, workout, client_user

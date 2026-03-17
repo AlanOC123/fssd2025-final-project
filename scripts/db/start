@@ -1,0 +1,17 @@
+#!/bin/bash
+# Usage: ./scripts/db/start
+# Starts the database container in detached mode and waits until healthy.
+# Safe to run if db is already running — Docker will no-op.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+source ./scripts/db/wait-healthy
+
+echo "Starting database..."
+docker-compose up -d db
+
+wait_for_db
+
+echo "Database is up and ready."

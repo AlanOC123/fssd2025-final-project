@@ -1,10 +1,11 @@
 from django.contrib import admin
+
 from .models import (
     Workout,
-    WorkoutExercise,
-    WorkoutSet,
     WorkoutCompletionRecord,
+    WorkoutExercise,
     WorkoutExerciseCompletionRecord,
+    WorkoutSet,
     WorkoutSetCompletionRecord,
 )
 

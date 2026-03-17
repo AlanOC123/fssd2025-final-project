@@ -1,0 +1,10 @@
+#!/bin/bash
+# Usage: ./scripts/db/stop
+# Stops the database container
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Shutting down database..."
+docker-compose stop db

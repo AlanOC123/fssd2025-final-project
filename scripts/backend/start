@@ -1,10 +1,14 @@
 #!/bin/bash
 # Usage: ./scripts/backend/start
+# Starts the web container in detached mode.
+# Assumes db is already running — use ./scripts/db/start first if not.
 
-# Ensure the script stops on errors
 set -e
 
 cd "$(dirname "$0")/../.."
 
-# Run the command in the 'web' container and remove it after
-docker-compose up
+echo "Starting backend..."
+docker-compose up -d web
+
+echo "✅ Backend running at http://localhost:8000"
+echo "   Tip: ./scripts/core/logs web — to tail Django logs"

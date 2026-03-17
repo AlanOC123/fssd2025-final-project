@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from model_bakery import baker
 
-from apps.users.models import MembershipStatus
 from apps.users.services.membership import MembershipService
 
 User = get_user_model()

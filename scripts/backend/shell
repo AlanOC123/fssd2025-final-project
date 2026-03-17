@@ -1,10 +1,10 @@
 #!/bin/bash
 # Usage: ./scripts/backend/shell
+# Opens the Django shell inside the web container.
+# Useful for quick model queries and debugging.
 
-# Ensure the script stops on errors
 set -e
 
 cd "$(dirname "$0")/../.."
 
-# Run the command in the 'web' container and remove it after
 docker-compose run --rm web python manage.py shell

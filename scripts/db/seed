@@ -1,0 +1,29 @@
+#!/bin/bash
+# Usage: ./scripts/db/seed [--demo]
+# Seeds the database against a running stack.
+#
+#   ./scripts/db/seed          → lookup tables only (seed_db)
+#   ./scripts/db/seed --demo   → lookup tables + demo users/programs/workouts
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+# Sanity check — db must be running
+if [ "$(docker inspect -f '{{.State.Health.Status}}' apex_db 2>/dev/null)" != "healthy" ]; then
+    echo "❌ Database is not healthy. Run ./scripts/db/start first."
+    exit 1
+fi
+
+echo "Seeding lookup tables..."
+docker-compose run --rm web python manage.py seed_db
+
+if [[ "$1" == "--demo" ]]; then
+    echo "Seeding demo environment..."
+    docker-compose run --rm web python manage.py seed_demo
+    echo "✅ Lookup tables + demo data seeded."
+else
+    echo "✅ Lookup tables seeded."
+    echo ""
+    echo "Tip: run with --demo to also seed demo users and programs."
+fi

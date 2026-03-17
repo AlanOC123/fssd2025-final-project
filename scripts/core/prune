@@ -1,0 +1,37 @@
+#!/bin/bash
+# Usage: ./scripts/core/prune [--all]
+# Reclaims Docker disk space without destroying volumes or containers.
+#
+#   ./scripts/core/prune       → removes dangling images and stopped containers
+#   ./scripts/core/prune --all → also clears the full builder cache
+#
+# Safe to run at any time — does NOT touch named volumes (pg_data)
+# or anonymous volumes (node_modules). Use core/nuke for a full wipe.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "=== Docker disk usage before ==="
+docker system df
+echo ""
+
+echo "Removing stopped containers..."
+docker container prune -f
+
+echo "Removing dangling images..."
+docker image prune -f
+
+if [[ "$1" == "--all" ]]; then
+    echo "Clearing builder cache..."
+    docker builder prune -a -f
+    echo "Removing unused images (not just dangling)..."
+    docker image prune -a -f
+fi
+
+echo ""
+echo "=== Docker disk usage after ==="
+docker system df
+
+echo ""
+echo "✅ Prune complete."

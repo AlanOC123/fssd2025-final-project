@@ -15,6 +15,7 @@ dist-ssr
 
 # Editor directories and files
 .vscode/*
+!.vscode/settings.json
 !.vscode/extensions.json
 .idea
 .DS_Store
@@ -23,3 +24,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tanstack
+src/routeTree.gen.ts
+.tanstack/

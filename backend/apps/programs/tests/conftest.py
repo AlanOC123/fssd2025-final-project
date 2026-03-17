@@ -7,8 +7,6 @@ from apps.programs.constants import (
 from apps.programs.models import ProgramPhaseStatusOption, ProgramStatusOption
 from factories import (
     ExperienceLevelFactory,
-    ProgramFactory,
-    ProgramPhaseFactory,
     ProgramPhaseOptionFactory,
     TrainingGoalFactory,
 )

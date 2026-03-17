@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { authApi } from '@/features/auth/api'
 import type { AuthUser, AuthState, LoginCredentials } from '@/features/auth/types'
+import { tryCatch } from '@/shared/utils/tryCatch'
 
 interface AuthStore extends AuthState {
     login: (credentials: LoginCredentials) => Promise<void>
@@ -17,37 +18,37 @@ export const useAuthStore = create<AuthStore>((set) => ({
     login: async (credentials: LoginCredentials) => {
         set({ isLoading: true })
 
-        try {
-            const user = await authApi.login(credentials)
-            set({ user, isAuthenticated: true, isLoading: false })
-        } catch (error) {
+        const { data: user, error } = await tryCatch(authApi.login(credentials))
+
+        if (error) {
             set({ isLoading: false })
             throw error
         }
+
+        set({ user, isAuthenticated: true, isLoading: false })
     },
 
     logout: async () => {
         set({ isLoading: true })
 
-        try {
-            await authApi.logout()
-        } finally {
-            set({ user: null, isAuthenticated: false, isLoading: false })
-        }
+        await tryCatch(authApi.logout()).finally(() =>
+            set({ user: null, isAuthenticated: false, isLoading: false }),
+        )
     },
 
     fetchUser: async () => {
         set({ isLoading: true })
 
-        try {
-            const user = await authApi.getUser()
-            set({ user, isAuthenticated: true, isLoading: false })
-        } catch {
+        const { data: user, error } = await tryCatch(authApi.getUser())
+
+        if (error) {
             set({ user: null, isAuthenticated: false, isLoading: false })
         }
+
+        set({ user, isAuthenticated: true, isLoading: false })
     },
 
-    setUser: async (user) => {
+    setUser: (user) => {
         set({ user, isAuthenticated: user !== null })
     },
 }))

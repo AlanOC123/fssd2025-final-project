@@ -29,7 +29,7 @@ export default defineConfig([
                 { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
             ],
 
-            'react-hooks/exhaustive-deps': 'warn',
+            'react-hooks/exhaustive-deps': ['warn', { allowConstantExport: true }],
 
             'no-console': ['warn', { allow: ['warn', 'error'] }],
             'prefer-const': 'error',

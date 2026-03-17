@@ -25,6 +25,8 @@
     "[json]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
+    "json.schemaDownload.enable": true,
+    "workbench.trustedDomains": ["https://ui.shadcn.com"],
     // Hide the noise
     "files.exclude": {
         "**/__pycache__": true,

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Usage: ./scripts/frontend/type-check
-# Runs tsc --noEmit inside the client container
+# Runs TypeScript type checking without emitting files.
+# Good to run before committing to catch type errors that ESLint misses.
 
 set -e
 
@@ -9,4 +10,4 @@ cd "$(dirname "$0")/../.."
 echo "Type checking frontend..."
 docker-compose run --rm client pnpm type-check
 
-echo "Type check passed."
+echo "✅ Type check passed."

@@ -1,5 +1,5 @@
 from decimal import Decimal
-from math import e, pow
+from math import e
 
 LOAD_CHART = {
     1: Decimal("1.00"),

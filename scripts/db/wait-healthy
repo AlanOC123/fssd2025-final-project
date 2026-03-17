@@ -1,0 +1,15 @@
+#!/bin/bash
+# Usage: source ./scripts/db/wait-healthy
+# NOT meant to be run directly — sourced by other db scripts.
+# Blocks until apex_db reports healthy, then returns.
+
+wait_for_db() {
+    echo "Waiting for database to be ready..."
+    until [ "$(docker inspect -f '{{.State.Health.Status}}' apex_db 2>/dev/null)" == "healthy" ]; do
+        local status
+        status=$(docker inspect -f '{{.State.Health.Status}}' apex_db 2>/dev/null || echo "not running")
+        echo "  ... DB status: $status"
+        sleep 2
+    done
+    echo "✅ Database is healthy."
+}

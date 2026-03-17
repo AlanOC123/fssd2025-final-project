@@ -1,5 +1,4 @@
 import pytest
-from model_bakery import baker
 from rest_framework import status
 
 from apps.biology.constants import MuscleGroupVocabulary

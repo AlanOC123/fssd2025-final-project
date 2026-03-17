@@ -1,0 +1,53 @@
+#!/bin/bash
+# Usage: ./scripts/db/reset [--demo]
+# ⚠️  DESTRUCTIVE — wipes the database volume and starts from scratch.
+# Stops web + db, removes pg_data, restarts db, runs migrations, seeds.
+# Client container is left untouched.
+#
+#   ./scripts/db/reset         → fresh db with lookup tables only
+#   ./scripts/db/reset --demo  → fresh db + demo users/programs/workouts
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+source ./scripts/db/wait-healthy
+
+echo "⚠️  This will wipe all database data."
+read -p "Are you sure? (y/N): " confirm
+if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+    echo "Aborted."
+    exit 0
+fi
+
+echo ""
+echo "1/5 Stopping web and db containers..."
+docker-compose stop web db
+
+echo "2/5 Removing database volume..."
+docker volume rm apex_pg_data 2>/dev/null && echo "  Removed apex_pg_data." || echo "  apex_pg_data not found, skipping."
+
+echo "3/5 Starting database..."
+docker-compose up -d db
+wait_for_db
+
+echo "4/5 Starting web..."
+docker-compose up -d web
+
+echo "5/5 Running migrations..."
+docker-compose run --rm web python manage.py makemigrations
+docker-compose run --rm web python manage.py migrate
+
+echo "Seeding lookup tables..."
+docker-compose run --rm web python manage.py seed_db
+
+if [[ "$1" == "--demo" ]]; then
+    echo "Seeding demo environment..."
+    docker-compose run --rm web python manage.py seed_demo
+    echo ""
+    echo "✅ Database reset complete with demo data."
+else
+    echo ""
+    echo "✅ Database reset complete."
+    echo "Tip: run with --demo to also seed demo users and programs."
+fi

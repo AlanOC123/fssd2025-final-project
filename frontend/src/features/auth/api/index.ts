@@ -1,10 +1,13 @@
 import { api } from '@/shared/api/client'
-import type { AuthUser, LoginCredentials } from '../types'
+import type { AuthUser, LoginResponse, LoginCredentials } from '../types'
 
 export const authApi = {
-    login: (credentials: LoginCredentials) => api.post<AuthUser>('/auth/login/', credentials),
+    login: async (credentials: LoginCredentials): Promise<AuthUser> => {
+        const response = await api.post<LoginResponse>('/auth/login/', credentials);
+        return response.user
+    },
 
-    logout: () => api.post<void>('/auth/login/'),
+    logout: () => api.post<void>('/auth/logout/'),
 
     getUser: () => api.get<AuthUser>('/auth/user/'),
 }

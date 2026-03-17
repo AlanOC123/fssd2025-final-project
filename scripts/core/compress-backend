@@ -1,0 +1,31 @@
+#!/bin/bash
+# Usage: ./scripts/core/compress-backend
+# Compresses the backend directory to backend.zip at the project root.
+# Excludes caches, compiled files, secrets, and virtual environments.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+if [ ! -d "backend" ]; then
+    echo "❌ backend directory not found."
+    exit 1
+fi
+
+echo "Backend size before compression:"
+du -sh backend
+
+rm -f backend.zip
+
+zip -rq backend.zip backend \
+    -x "*/__pycache__/*" \
+    -x "*/.git/*" \
+    -x "*/.env*" \
+    -x "*/.venv/*" \
+    -x "*/.pytest_cache/*" \
+    -x "*/.ruff_cache/*" \
+    -x "*/.DS_Store" \
+    -x "*.pyc"
+
+echo "✅ Compressed to backend.zip"
+du -sh backend.zip

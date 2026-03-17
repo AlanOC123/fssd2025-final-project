@@ -1,6 +1,7 @@
 #!/bin/bash
 # Usage: ./scripts/frontend/build
-# Runs a production build inside the client container
+# Runs a production build (tsc + vite build) inside the client container.
+# Output goes to frontend/dist/. Use before deploying or testing the build.
 
 set -e
 
@@ -9,4 +10,4 @@ cd "$(dirname "$0")/../.."
 echo "Building frontend for production..."
 docker-compose run --rm client pnpm build
 
-echo "Build complete."
+echo "✅ Production build complete. Output in frontend/dist/"

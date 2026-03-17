@@ -8,7 +8,6 @@ from apps.users.models import (
     ExperienceLevel,
     TrainingGoal,
 )
-from core.tests.assertions import assert_public_reference_endpoint
 
 User = get_user_model()
 pytestmark = pytest.mark.django_db

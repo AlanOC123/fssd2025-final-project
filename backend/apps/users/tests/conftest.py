@@ -5,7 +5,6 @@ from model_bakery import baker
 from apps.users.constants import MembershipVocabulary
 from apps.users.models import (
     MembershipStatus,
-    TrainerClientMembership,
     TrainingGoal,
 )
 

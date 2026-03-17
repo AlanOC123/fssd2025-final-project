@@ -1,9 +1,0 @@
-#!/bin/bash
-# Usage: ./scripts/backend/clear-cache
-
-# Ensure the script stops on errors
-set -e
-
-cd "$(dirname "$0")/../.."
-
-docker system prune -a -f

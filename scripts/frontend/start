@@ -1,0 +1,15 @@
+#!/bin/bash
+# Usage: ./scripts/frontend/start
+# Starts the client container in detached mode.
+# Use when the image is already built and you just need it running.
+# Assumes web and db are already up.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Starting frontend..."
+docker-compose up -d client
+
+echo "✅ Frontend running at http://localhost:5173"
+echo "   Tip: ./scripts/core/logs client — to tail Vite logs"

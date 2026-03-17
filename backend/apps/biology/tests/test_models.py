@@ -7,7 +7,6 @@ from model_bakery import baker
 
 from apps.biology.models import (
     JointAction,
-    MovementPattern,
     MuscleInvolvement,
 )
 

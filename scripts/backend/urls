@@ -1,0 +1,13 @@
+#!/bin/bash
+# Usage: ./scripts/backend/urls
+# Dumps all registered Django URLs to urls.txt at the project root.
+# Useful for quickly checking endpoint paths when building the frontend.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Dumping URLs..."
+docker-compose run --rm web sh -c "python manage.py show_urls > /app/urls.txt"
+
+echo "✅ URLs written to backend/urls.txt"

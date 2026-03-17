@@ -1,10 +1,20 @@
 #!/bin/bash
 # Usage: ./scripts/frontend/dev
-# Starts the client container in isolation (assumes backend already running)
+# Tears down the client container and its anonymous node_modules volume,
+# rebuilds the image, and starts Vite in the foreground with HMR.
+# Use this as your standard dev startup — it guarantees node_modules
+# always matches the lockfile.
+# db and web containers are left untouched.
 
 set -e
 
 cd "$(dirname "$0")/../.."
 
-echo "Starting frontend dev server..."
+echo "1/3 Stopping client and clearing node_modules volume..."
+docker-compose down client -v
+
+echo "2/3 Building client..."
+docker-compose build client
+
+echo "3/3 Starting frontend dev server (foreground)..."
 docker-compose up client

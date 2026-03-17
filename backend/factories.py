@@ -11,10 +11,7 @@ from factory.django import DjangoModelFactory
 
 from apps.programs.models import Program, ProgramPhase, ProgramPhaseOption
 from apps.users.models import (
-    ClientProfile,
     ExperienceLevel,
-    TrainerClientMembership,
-    TrainerProfile,
     TrainingGoal,
 )
 from apps.workouts.models import (

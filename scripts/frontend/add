@@ -1,23 +1,34 @@
 #!/bin/bash
-# Usage: ./scripts/frontend/install
-# Installs a new package and syncs dependencies in docker
+# Usage: ./scripts/frontend/add <package> [packages...]
+# Installs one or more packages, updates pnpm-lock.yaml locally,
+# then does a full container rebuild so node_modules is guaranteed in sync.
+#
+# Examples:
+#   ./scripts/frontend/add react-error-boundary
+#   ./scripts/frontend/add zod @tanstack/react-query
+#   ./scripts/frontend/add -D @types/node
 
 set -e
 
 cd "$(dirname "$0")/../.."
 
-if ! command -v pnpm &> /dev/null; then
-    echo "Error: pnpm is not installed locally."
-    echo "Install it with: brew install pnpm (mac) or npm install -g pnpm"
-    echo "If using a different package manager do not use this script"
+if [ -z "$1" ]; then
+    echo "❌ No package specified."
+    echo "Usage: ./scripts/frontend/add <package> [packages...]"
     exit 1
 fi
 
+if ! command -v pnpm &> /dev/null; then
+    echo "❌ pnpm is not installed locally."
+    echo "   Install with: brew install pnpm  (mac)"
+    echo "   Or: npm install -g pnpm"
+    exit 1
+fi
 
-echo "Installing package"
+echo "1/2 Installing package(s) locally and updating lockfile..."
 pnpm add "$@" --prefix frontend
 
-echo "Synching dependencies..."
-docker-compose run --rm client sh -c "pnpm install"
+echo "2/2 Rebuilding client container to sync node_modules..."
+./scripts/frontend/rebuild
 
-echo "Done."
+echo "✅ Done. $(echo "$@") installed and container rebuilt."

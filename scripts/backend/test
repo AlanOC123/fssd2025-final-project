@@ -1,0 +1,37 @@
+#!/bin/bash
+# Usage: ./scripts/backend/test [app] [file]
+# Runs pytest inside the web container. No migrations needed (pytest.ini handles this).
+#
+# Examples:
+#   ./scripts/backend/test                        → all tests
+#   ./scripts/backend/test users                  → apps/users/ only
+#   ./scripts/backend/test users test_views_memberships  → specific file
+#   ./scripts/backend/test core                   → core/ tests
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+if [ -z "$1" ]; then
+    # No args — run everything
+    echo "Running all tests..."
+    docker-compose run --rm web pytest
+
+elif [ -z "$2" ]; then
+    # App name only
+    echo "Running tests for: $1"
+    if [ "$1" = "core" ]; then
+        docker-compose run --rm web pytest core/
+    else
+        docker-compose run --rm web pytest "apps/$1"
+    fi
+
+else
+    # App + file (no .py extension needed)
+    echo "Running tests for: $1/$2"
+    if [ "$1" = "core" ]; then
+        docker-compose run --rm web pytest "core/tests/$2.py"
+    else
+        docker-compose run --rm web pytest "apps/$1/tests/$2.py"
+    fi
+fi

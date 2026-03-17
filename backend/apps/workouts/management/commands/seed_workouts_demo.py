@@ -47,7 +47,7 @@ class Command(BaseCommand):
                 return
 
             today = timezone.localdate()
-            now = timezone.now()
+            timezone.now()
 
             # ── Process each phase ────────────────────────────────────────────
 

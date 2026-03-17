@@ -1,15 +1,15 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
-import { tanstackRouter } from "@tanstack/router-plugin/vite";
-import checker from "vite-plugin-checker";
-import path from "path";
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
+import checker from 'vite-plugin-checker'
+import path from 'path'
 
 export default defineConfig({
     plugins: [
         tanstackRouter({
-            routesDirectory: "./src/routes",
-            generatedRouteTree: "./src/routeTree.gen",
+            routesDirectory: './src/routes',
+            generatedRouteTree: './src/routeTree.gen.ts',
         }),
         react(),
         tailwindcss(),
@@ -17,17 +17,17 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            "@": path.resolve(__dirname, "./src"),
+            '@': path.resolve(__dirname, './src'),
         },
     },
     server: {
-        host: "0.0.0.0",
+        host: '0.0.0.0',
         port: 5173,
         proxy: {
-          "/api": {
-            target: 'http://web:8000',
-            changeOrigin: true
-          }
-        }
+            '/api': {
+                target: 'http://web:8000',
+                changeOrigin: true,
+            },
+        },
     },
-});
+})

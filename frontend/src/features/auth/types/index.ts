@@ -14,7 +14,7 @@ export interface TrainerProfile extends ApexModel {
     logo: string
 }
 
-export type UserRole = 'trainer' | 'client' | 'admin' | 'unknown'
+export type UserRole = 'trainer' | 'client' | 'admin' | null
 
 export interface AuthUser extends ApexModel {
     email: string
@@ -23,12 +23,21 @@ export interface AuthUser extends ApexModel {
     full_name: string
     is_trainer: boolean
     is_client: boolean
-    profile: ClientProfile | TrainerProfile | null
+    profile: ClientProfile | TrainerProfile | null,
+    role: UserRole
 }
 
 export interface LoginCredentials {
     email: string
     password: string
+}
+
+export interface LoginResponse {
+    access: string
+    access_expiration: string
+    refresh: string
+    refresh_expiration: string
+    user: AuthUser
 }
 
 export interface AuthState {

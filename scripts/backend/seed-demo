@@ -1,9 +1,0 @@
-#!/bin/bash
-# Usage: ./scripts/backend/seed-demo
-
-# Ensure the script stops on errors
-set -e
-
-cd "$(dirname "$0")/../.."
-echo "SEEDING DEMO ENVIRONMENT"
-docker-compose run --rm web python manage.py seed_demo

@@ -1,0 +1,13 @@
+#!/bin/bash
+# Usage: ./scripts/core/stop
+# Gracefully stops all running containers without removing volumes.
+# Safe to run at any time — data is preserved.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Stopping Apex stack..."
+docker-compose down
+
+echo "All containers stopped."

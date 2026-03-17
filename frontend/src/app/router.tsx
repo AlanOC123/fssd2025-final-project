@@ -1,20 +1,27 @@
 import { createRouter } from '@tanstack/react-router'
 import { routeTree } from '@/routeTree.gen'
+import { QueryClient } from '@tanstack/react-query'
 
 export interface RouteContext {
     isAuthenticated: boolean
-    role: 'trainer' | 'client' | 'admin' | null
+    isTrainer: boolean
+    isClient: boolean
+    isAdmin: boolean
+    queryClient: QueryClient
 }
 
 export const router = createRouter({
     routeTree,
     context: {
         isAuthenticated: false,
-        role: null,
+        isTrainer: false,
+        isClient: false,
+        isAdmin: false,
+        queryClient: undefined!
     } satisfies RouteContext,
     defaultPreload: 'intent',
     defaultPreloadDelay: 100,
-    scrollResortation: true,
+    scrollRestoration: true,
 })
 
 declare module '@tanstack/react-router' {

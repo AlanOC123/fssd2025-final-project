@@ -42,10 +42,12 @@ client.interceptors.response.use(
         const original: RetryableRequest = error.config
         const is401 = error.response?.status === 401
         const isRefreshEndpoint = original.url?.includes('/auth/token/refresh/')
+        const isAuthEndpoint =
+            original?.url?.includes('/auth/login/') || original?.url?.includes('/auth/register/')
         const alreadyRetried = original._retry
 
         // If it wasnt a 401, is a refresh endpoint and we've already tried, reject.
-        if (!is401 || isRefreshEndpoint || alreadyRetried) {
+        if (!is401 || isRefreshEndpoint || alreadyRetried || isAuthEndpoint) {
             return Promise.reject(normaliseError(error))
         }
 
@@ -73,9 +75,6 @@ client.interceptors.response.use(
         } catch (refreshError) {
             // No refresh token, add the refresh error to the queue
             drainQueue(refreshError)
-
-            // Send back to login
-            window.location.href = '/login'
 
             // Reject
             return Promise.reject(normaliseError(refreshError))

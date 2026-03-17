@@ -8,7 +8,6 @@ export function useAuth() {
 
     const login = useAuthStore((s) => s.login)
     const logout = useAuthStore((s) => s.logout)
-    const fetchUser = useAuthStore((s) => s.fetchUser)
     const setUser = useAuthStore((s) => s.setUser)
 
     const isTrainer = user?.is_trainer ?? false
@@ -26,7 +25,6 @@ export function useAuth() {
         isLoading,
         login,
         logout,
-        fetchUser,
         setUser,
         isTrainer,
         isClient,

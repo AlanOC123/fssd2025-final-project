@@ -19,9 +19,8 @@ from .serializers import (
     ExperienceLevelSerializer,
     MembershipRequestSerializer,
     TrainerClientMembershipSerializer,
-    TrainerProfileSerializer,
+    TrainerMatchingSerializer,
     TrainingGoalSerializer,
-    TrainerMatchingSerializer
 )
 from .services.membership import MembershipService
 

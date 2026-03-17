@@ -1,0 +1,15 @@
+#!/bin/bash
+# Usage: ./scripts/core/logs [service]
+# Tails logs for all services, or a specific one.
+#
+# Examples:
+#   ./scripts/core/logs          All
+#   ./scripts/core/logs web      Backend
+#   ./scripts/core/logs client   Frontend
+#   ./scripts/core/logs db       Database
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+docker-compose logs -f "$@"

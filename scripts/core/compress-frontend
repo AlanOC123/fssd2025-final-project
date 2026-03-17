@@ -1,0 +1,33 @@
+#!/bin/bash
+# Usage: ./scripts/core/compress-frontend
+# Compresses the frontend directory to frontend.zip at the project root.
+# Excludes node_modules, build output, caches, and secrets.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+if [ ! -d "frontend" ]; then
+    echo "❌ frontend directory not found."
+    exit 1
+fi
+
+echo "Frontend size before compression:"
+du -sh frontend
+
+rm -f frontend.zip
+
+zip -rq frontend.zip frontend \
+    -x "*/node_modules/*" \
+    -x "*/.git/*" \
+    -x "*/.env*" \
+    -x "*/dist/*" \
+    -x "*/.cache/*" \
+    -x "*/.vite/*" \
+    -x "*/.DS_Store" \
+    -x "*.log" \
+    -x "*/.pnpm-store/*" \
+    -x "*/coverage/*"
+
+echo "✅ Compressed to frontend.zip"
+du -sh frontend.zip

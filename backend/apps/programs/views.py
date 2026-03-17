@@ -24,6 +24,8 @@ from apps.programs.services.program_phases import ProgramPhaseService
 from apps.programs.services.programs import ProgramService
 from core.views import NormalisedLookupViewSet
 
+from .filters import ProgramFilter
+
 
 class ProgramPhaseOptionViewSet(NormalisedLookupViewSet):
     serializer_class = ProgramPhaseOptionSerializer
@@ -198,12 +200,7 @@ class ProgramViewSet(
 ):
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = [
-        "trainer_client_membership",
-        "training_goal",
-        "experience_level",
-        "status",
-    ]
+    filterset_class = ProgramFilter
 
     def get_queryset(self):
         user = self.request.user

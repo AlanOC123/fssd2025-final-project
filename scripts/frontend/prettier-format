@@ -1,0 +1,19 @@
+#!/bin/bash
+# Usage: ./scripts/frontend/format [directory]
+# Runs Prettier across src/ inside the client container.
+# Optionally pass a subdirectory to format a specific area.
+#
+# Examples:
+#   ./scripts/frontend/format              → all of src/
+#   ./scripts/frontend/format src/features/auth
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+TARGET="${1:-src/}"
+
+echo "Formatting $TARGET..."
+docker-compose run --rm client pnpm exec prettier --write "$TARGET"
+
+echo "✅ Formatting complete."

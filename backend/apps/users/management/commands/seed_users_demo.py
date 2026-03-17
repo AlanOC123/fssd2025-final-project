@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from apps.users.constants import MembershipVocabulary
 from apps.users.models import (
     ClientProfile,
     ExperienceLevel,

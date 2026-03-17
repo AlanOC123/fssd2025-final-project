@@ -27,7 +27,7 @@ def test_trainer_can_list_own_programs(
     response = trainer_api_client.get(url)
 
     assert response.status_code == 200
-    ids = [item["id"] for item in response.data]
+    ids = [item["id"] for item in response.data["results"]]
     assert str(program.id) in ids
 
 
@@ -51,7 +51,7 @@ def test_client_can_list_own_programs(
     response = client_api_client.get(url)
 
     assert response.status_code == 200
-    ids = [item["id"] for item in response.data]
+    ids = [item["id"] for item in response.data["results"]]
     assert str(program.id) in ids
 
 
@@ -75,7 +75,7 @@ def test_other_trainer_cannot_see_unrelated_program(
     response = other_trainer_api_client.get(url)
 
     assert response.status_code == 200
-    assert response.data == [] or response.data["results"] == []
+    assert response.data["results"] == []
 
 
 def test_trainer_can_create_program_for_own_membership(

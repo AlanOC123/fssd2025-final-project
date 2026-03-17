@@ -1,28 +1,23 @@
 #!/bin/bash
 # Usage: ./scripts/frontend/rebuild
+# Hard rebuild of the client container only — use after adding packages.
+# Stops client, removes the node_modules volume, builds with --no-cache,
+# starts detached. db and web containers are left untouched.
+#
+# Note: ./scripts/frontend/add calls this automatically after installing,
+# so you rarely need to run this directly.
 
-# Ensure the script stops on errors
 set -e
 
 cd "$(dirname "$0")/../.."
 
-echo "Starting rebuild of docker container"
+echo "1/3 Stopping client and clearing node_modules volume..."
+docker-compose down client -v
 
-echo "1/4 Clearing cache"
-
-# Clear the cache
-docker builder prune -a -f
-
-echo "2/4 Shutting Down Containers"
-# Stop everything
-docker-compose down
-
-echo "3/4 Rebuilding From Scratch"
-# Rebuild client container (make sure it doesnt use cached image)
+echo "2/3 Rebuilding client from scratch..."
 docker-compose build --no-cache client
 
-echo "4/4 Rerunning Container"
-# Restart container
-docker-compose up -d
+echo "3/3 Starting frontend..."
+docker-compose up -d client
 
-echo "Build Complete. New Dependencies Installed"
+echo "✅ Frontend rebuilt and running at http://localhost:5173"

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Usage: ./scripts/core/start
+# Starts the full stack in the foreground (db → web → client).
+# Use this when you want to see all logs in one terminal.
+# Use the individual service start scripts for detached background running.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Starting Apex stack..."
+docker-compose up

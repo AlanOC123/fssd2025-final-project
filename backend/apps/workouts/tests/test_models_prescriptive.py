@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError
 
 from factories import (
     WorkoutExerciseFactory,
-    WorkoutFactory,
     WorkoutSetFactory,
 )
 

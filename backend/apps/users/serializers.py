@@ -118,6 +118,7 @@ class TrainerMatchingSerializer(ApexSerializer):
         fields = ApexSerializer.Meta.fields + [
             "first_name",
             "last_name",
+            "email",
             "accepted_goals",
             "accepted_levels",
         ]

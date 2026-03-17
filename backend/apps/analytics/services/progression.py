@@ -13,7 +13,6 @@ def get_next_session_recommendation(program, exercise):
     if not membership:
         return None
 
-    client_profile = membership.client
     experience_level = program.experience_level
     training_goal = program.training_goal
 

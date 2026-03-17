@@ -1,10 +1,13 @@
 #!/bin/bash
 # Usage: ./scripts/backend/check
+# Runs Django's system check framework.
+# Good to run after model or settings changes before starting the server.
 
-# Ensure the script stops on errors
 set -e
 
 cd "$(dirname "$0")/../.."
 
-# Run the command in the 'web' container and remove it after
+echo "Running Django system check..."
 docker-compose run --rm web python manage.py check
+
+echo "✅ System check passed."

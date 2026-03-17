@@ -82,7 +82,7 @@ class TestCalculateSessionLoad:
     def test_mixed_skipped_and_completed(
         self, workout, workout_exercise, workout_set, client_user
     ):
-        now = timezone.now()
+        timezone.now()
         session = WorkoutCompletionRecordFactory(workout=workout, client=client_user)
         exercise_record = WorkoutExerciseCompletionRecordFactory(
             workout_completion_record=session,

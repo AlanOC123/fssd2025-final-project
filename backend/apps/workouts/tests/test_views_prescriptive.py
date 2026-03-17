@@ -1,12 +1,6 @@
 import pytest
 from django.urls import reverse
 
-from factories import (
-    WorkoutExerciseFactory,
-    WorkoutFactory,
-    WorkoutSetFactory,
-)
-
 pytestmark = pytest.mark.django_db
 
 
@@ -17,7 +11,7 @@ class TestWorkoutViewSet:
         response = trainer_api_client.get(url)
 
         assert response.status_code == 200
-        ids = [item["id"] for item in response.data]
+        ids = [item["id"] for item in response.data["results"]]
         assert str(workout.id) in ids
 
     def test_client_can_list_own_workouts(self, client_api_client, workout):
@@ -25,7 +19,7 @@ class TestWorkoutViewSet:
         response = client_api_client.get(url)
 
         assert response.status_code == 200
-        ids = [item["id"] for item in response.data]
+        ids = [item["id"] for item in response.data["results"]]
         assert str(workout.id) in ids
 
     def test_other_trainer_cannot_see_unrelated_workout(
@@ -35,7 +29,7 @@ class TestWorkoutViewSet:
         response = other_trainer_api_client.get(url)
 
         assert response.status_code == 200
-        assert response.data == []
+        assert response.data["results"] == []
 
     def test_unauthenticated_request_is_rejected(self, api_client, workout):
         url = reverse("workouts-list")
@@ -114,7 +108,7 @@ class TestWorkoutViewSet:
         response = trainer_api_client.get(url)
 
         assert response.status_code == 200
-        first = response.data[0]
+        first = response.data["results"][0]
         assert "exercises" not in first
 
 

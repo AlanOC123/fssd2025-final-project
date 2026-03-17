@@ -1,0 +1,18 @@
+#!/bin/bash
+# Usage: ./scripts/backend/dev
+# Stops the web container, rebuilds it, and starts it in the foreground.
+# Use this during active backend development to see Django logs in real time.
+# Does NOT rebuild with --no-cache — use ./scripts/backend/rebuild for that.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+echo "Stopping web container..."
+docker-compose stop web
+
+echo "Building backend..."
+docker-compose build web
+
+echo "Starting backend (foreground)..."
+docker-compose up web

@@ -1,10 +1,15 @@
 #!/bin/bash
-# Usage: ./scripts/backend/manage [command_name]
+# Usage: ./scripts/backend/manage <command> [args]
+# Passthrough for any Django management command.
+#
+# Examples:
+#   ./scripts/backend/manage showmigrations
+#   ./scripts/backend/manage show_urls
+#   ./scripts/backend/manage createsuperuser
+#   ./scripts/backend/manage check
 
-# Ensure the script stops on errors
 set -e
 
 cd "$(dirname "$0")/../.."
 
-# Run the command in the 'web' container and remove it after
 docker-compose run --rm web python manage.py "$@"

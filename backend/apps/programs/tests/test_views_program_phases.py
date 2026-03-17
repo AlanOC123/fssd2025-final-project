@@ -36,7 +36,7 @@ def test_trainer_can_list_own_program_phases(
     response = trainer_api_client.get(url)
 
     assert response.status_code == 200
-    ids = [item["id"] for item in response.data]
+    ids = [item["id"] for item in response.data["results"]]
     assert str(phase.id) in ids
 
 
@@ -69,7 +69,7 @@ def test_client_can_list_own_program_phases(
     response = client_api_client.get(url)
 
     assert response.status_code == 200
-    ids = [item["id"] for item in response.data]
+    ids = [item["id"] for item in response.data["results"]]
     assert str(phase.id) in ids
 
 
