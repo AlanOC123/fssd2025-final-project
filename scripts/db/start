@@ -7,6 +7,11 @@ set -e
 
 cd "$(dirname "$0")/../.."
 
+if lsof -i :5432 | grep -q LISTEN; then
+    echo "⚠️  Port 5432 is already in use — close local Postgres before starting."
+    exit 1
+fi
+
 source ./scripts/db/wait-healthy
 
 echo "Starting database..."

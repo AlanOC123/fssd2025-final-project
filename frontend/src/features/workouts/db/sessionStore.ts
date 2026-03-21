@@ -13,14 +13,10 @@ interface SessionState {
     skipExercise: (workoutExerciseId: string) => Promise<LocalExerciseRecord>
 
     logSet: (
-        params: Pick<
-            LocalSetRecord,
-            | 'workoutSetId'
-            | 'repsCompleted'
-            | 'weightCompleted'
-            | 'difficultyRating'
-            | 'repsInReserve'
-        >,
+        params: Pick<LocalSetRecord, 'workoutSetId' | 'repsCompleted' | 'weightCompleted'> & {
+            difficultyRating?: number | null
+            repsInReserve?: number | null
+        },
     ) => Promise<LocalSetRecord>
 
     skipSet: (workoutSetId: string) => Promise<LocalSetRecord>

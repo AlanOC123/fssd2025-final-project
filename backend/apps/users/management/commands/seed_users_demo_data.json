@@ -1,22 +1,102 @@
 {
-    "trainer": {
-        "email": "coach@apex.com",
-        "password": "password123",
-        "first_name": "Apex",
-        "last_name": "Coach",
-        "company": "Apex Performance Systems",
-        "accepted_goals": ["HYPERTROPHY", "STRENGTH"],
-        "accepted_levels": ["INTERMEDIATE", "ADVANCED"]
-    },
-    "client": {
-        "email": "demo@apex.com",
-        "password": "password123",
-        "first_name": "Demo",
-        "last_name": "Athlete",
-        "goal_code": "HYPERTROPHY",
-        "level_code": "INTERMEDIATE"
-    },
-    "membership": {
-        "status_code": "ACTIVE"
-    }
+    "trainers": [
+        {
+            "email": "coach@apex.com",
+            "password": "password123",
+            "first_name": "Apex",
+            "last_name": "Coach",
+            "company": "Apex Performance Systems",
+            "accepted_goals": ["HYPERTROPHY", "STRENGTH"],
+            "accepted_levels": ["INTERMEDIATE", "ADVANCED"],
+            "is_superuser": true
+        },
+        {
+            "email": "sarah.mills@apex.com",
+            "password": "password123",
+            "first_name": "Sarah",
+            "last_name": "Mills",
+            "company": "Mills Fitness",
+            "accepted_goals": ["HYPERTROPHY", "MUSCLE_ENDURANCE"],
+            "accepted_levels": ["BEGINNER", "INTERMEDIATE"]
+        },
+        {
+            "email": "james.power@apex.com",
+            "password": "password123",
+            "first_name": "James",
+            "last_name": "Power",
+            "company": "PowerHouse Training",
+            "accepted_goals": ["STRENGTH"],
+            "accepted_levels": ["INTERMEDIATE", "ADVANCED", "ELITE"]
+        },
+        {
+            "email": "lisa.ryan@apex.com",
+            "password": "password123",
+            "first_name": "Lisa",
+            "last_name": "Ryan",
+            "company": "Ryan Athletic",
+            "accepted_goals": ["HYPERTROPHY", "STRENGTH", "MUSCLE_ENDURANCE"],
+            "accepted_levels": ["BEGINNER", "INTERMEDIATE", "ADVANCED"]
+        },
+        {
+            "email": "mark.foley@apex.com",
+            "password": "password123",
+            "first_name": "Mark",
+            "last_name": "Foley",
+            "company": "Foley S&C",
+            "accepted_goals": ["STRENGTH", "MUSCLE_ENDURANCE"],
+            "accepted_levels": ["ADVANCED", "ELITE"]
+        }
+    ],
+    "clients": [
+        {
+            "email": "demo@apex.com",
+            "password": "password123",
+            "first_name": "Demo",
+            "last_name": "Athlete",
+            "goal_code": "HYPERTROPHY",
+            "level_code": "INTERMEDIATE",
+            "trainer_email": "coach@apex.com",
+            "membership_status": "ACTIVE"
+        },
+        {
+            "email": "emma.walsh@apex.com",
+            "password": "password123",
+            "first_name": "Emma",
+            "last_name": "Walsh",
+            "goal_code": "HYPERTROPHY",
+            "level_code": "BEGINNER",
+            "trainer_email": "sarah.mills@apex.com",
+            "membership_status": "ACTIVE"
+        },
+        {
+            "email": "conor.burke@apex.com",
+            "password": "password123",
+            "first_name": "Conor",
+            "last_name": "Burke",
+            "goal_code": "STRENGTH",
+            "level_code": "ADVANCED",
+            "trainer_email": "james.power@apex.com",
+            "membership_status": "ACTIVE"
+        },
+        {
+            "email": "niamh.kelly@apex.com",
+            "password": "password123",
+            "first_name": "Niamh",
+            "last_name": "Kelly",
+            "goal_code": "HYPERTROPHY",
+            "level_code": "INTERMEDIATE",
+            "trainer_email": null,
+            "membership_status": null
+        },
+        {
+            "email": "liam.murphy@apex.com",
+            "password": "password123",
+            "first_name": "Liam",
+            "last_name": "Murphy",
+            "goal_code": "STRENGTH",
+            "level_code": "INTERMEDIATE",
+            "trainer_email": "lisa.ryan@apex.com",
+            "membership_status": "PENDING_TRAINER_REVIEW"
+        }
+    ]
 }

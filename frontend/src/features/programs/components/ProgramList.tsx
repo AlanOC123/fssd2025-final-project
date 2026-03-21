@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { BookOpen, ChevronRight } from 'lucide-react'
+import { useState } from 'react'
+import { BookOpen, ChevronRight, Plus } from 'lucide-react'
 import { programsQueryOptions } from '@/features/programs/api'
 import type { ProgramListItem, ProgramStatusCode } from '@/features/programs/types'
 import { Badge } from '@/shared/components/ui/badge'
@@ -15,6 +16,7 @@ import {
 import { Separator } from '@/shared/components/ui/separator'
 import { cn } from '@/shared/utils/utils'
 import { ROUTES } from '@/app/constants'
+import { CreateProgramSheet } from './CreateProgramSheet'
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -36,12 +38,26 @@ const STATUS_LABELS: Record<ProgramStatusCode, string> = {
     ABANDONED: 'Abandoned',
 }
 
+// ─── Status normaliser ────────────────────────────────────────────────────────
+const LABEL_TO_CODE: Record<string, ProgramStatusCode> = {
+    Creating: 'CREATING',
+    'Out for Review': 'OUT_FOR_REVIEW',
+    'Ready to Begin': 'READY_TO_BEGIN',
+    'In Progress': 'IN_PROGRESS',
+    Completed: 'COMPLETED',
+    Abandoned: 'ABANDONED',
+}
+
+function getStatusCode(status: { code?: ProgramStatusCode; label: string }): ProgramStatusCode {
+    return status.code ?? LABEL_TO_CODE[status.label] ?? 'CREATING'
+}
+
 // ─── Program Row ──────────────────────────────────────────────────────────────
 
 function ProgramRow({ program }: { program: ProgramListItem }) {
     const navigate = useNavigate()
-    const statusStyle = STATUS_STYLES[program.status.code] ?? STATUS_STYLES.CREATING
-    const statusLabel = STATUS_LABELS[program.status.code] ?? program.status.label
+    const statusStyle = STATUS_STYLES[getStatusCode(program.status)] ?? STATUS_STYLES.CREATING
+    const statusLabel = STATUS_LABELS[getStatusCode(program.status)] ?? program.status.label
 
     const dateRange =
         program.planned_start_date && program.planned_end_date
@@ -82,7 +98,7 @@ function ProgramRow({ program }: { program: ProgramListItem }) {
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-function EmptyPrograms() {
+function EmptyPrograms({ onNew }: { onNew: () => void }) {
     return (
         <Empty className="border border-dashed border-grey-800">
             <EmptyHeader>
@@ -91,9 +107,13 @@ function EmptyPrograms() {
                 </EmptyMedia>
                 <EmptyTitle className="text-sm text-grey-300">No programs yet</EmptyTitle>
                 <EmptyDescription className="text-xs">
-                    Programs you create for clients will appear here.
+                    Create your first program for a client to get started.
                 </EmptyDescription>
             </EmptyHeader>
+            <Button size="sm" onClick={onNew} className="gap-1.5">
+                <Plus size={13} />
+                New Program
+            </Button>
         </Empty>
     )
 }
@@ -119,47 +139,61 @@ function ProgramGroup({ title, programs }: { title: string; programs: ProgramLis
 // ─── Program List ─────────────────────────────────────────────────────────────
 
 export function ProgramList() {
+    const [sheetOpen, setSheetOpen] = useState(false)
     const { data: programs } = useSuspenseQuery(programsQueryOptions())
 
-    const active = programs.results.filter((p) => p.status.label === 'In Progress')
+    const active = programs.results.filter((p) => ['IN_PROGRESS'].includes(getStatusCode(p.status)))
     const pending = programs.results.filter((p) =>
-        ['Creating', 'Out for Review', 'Ready to Begin'].includes(p.status.label),
+        ['CREATING', 'OUT_FOR_REVIEW', 'READY_TO_BEGIN'].includes(getStatusCode(p.status)),
     )
     const finished = programs.results.filter((p) =>
-        ['Completed', 'Abandoned'].includes(p.status.label),
+        ['COMPLETED', 'ABANDONED'].includes(getStatusCode(p.status)),
     )
 
-    console.log(programs)
-
     return (
-        <div className="p-8 max-w-3xl">
-            <div className="flex items-center gap-3 mb-8">
-                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-brand-500/10 text-brand-400">
-                    <BookOpen size={18} />
+        <>
+            <div className="p-8 max-w-3xl">
+                <div className="flex items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-brand-500/10 text-brand-400">
+                            <BookOpen size={18} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-semibold text-grey-50">Programs</h1>
+                            <p className="text-sm text-grey-400 mt-0.5">
+                                {programs.count} {programs.count === 1 ? 'program' : 'programs'}{' '}
+                                total
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        size="sm"
+                        onClick={() => setSheetOpen(true)}
+                        className="gap-1.5 shrink-0"
+                    >
+                        <Plus size={13} />
+                        New Program
+                    </Button>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-semibold text-grey-50">Programs</h1>
-                    <p className="text-sm text-grey-400 mt-0.5">
-                        {programs.count} {programs.count === 1 ? 'program' : 'programs'} total
-                    </p>
-                </div>
+
+                {programs.count === 0 ? (
+                    <EmptyPrograms onNew={() => setSheetOpen(true)} />
+                ) : (
+                    <div className="flex flex-col gap-8">
+                        <ProgramGroup title="Active" programs={active} />
+                        {active.length > 0 && pending.length > 0 && (
+                            <Separator className="bg-grey-800" />
+                        )}
+                        <ProgramGroup title="Pending" programs={pending} />
+                        {(active.length > 0 || pending.length > 0) && finished.length > 0 && (
+                            <Separator className="bg-grey-800" />
+                        )}
+                        <ProgramGroup title="Finished" programs={finished} />
+                    </div>
+                )}
             </div>
 
-            {programs.count === 0 ? (
-                <EmptyPrograms />
-            ) : (
-                <div className="flex flex-col gap-8">
-                    <ProgramGroup title="Active" programs={active} />
-                    {active.length > 0 && pending.length > 0 && (
-                        <Separator className="bg-grey-800" />
-                    )}
-                    <ProgramGroup title="Pending" programs={pending} />
-                    {(active.length > 0 || pending.length > 0) && finished.length > 0 && (
-                        <Separator className="bg-grey-800" />
-                    )}
-                    <ProgramGroup title="Finished" programs={finished} />
-                </div>
-            )}
-        </div>
+            <CreateProgramSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+        </>
     )
 }

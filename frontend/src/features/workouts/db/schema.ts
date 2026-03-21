@@ -30,7 +30,7 @@ const localSetRecordSchema = z.object({
     difficultyRating: z.number().nullable(),
     repsInReserve: z.number().nullable(),
     completedAt: z.iso.datetime(),
-    synced: z.boolean()
+    synced: z.boolean(),
 })
 
 export type LocalSession = z.infer<typeof localSessionSchema>

@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { ExerciseAnalytics } from '@/features/analytics/components/ExerciseAnalytics'
+import { programsQueryOptions } from '@/features/programs/api'
 
 export const Route = createFileRoute('/_auth/trainer/_layout/analytics/')({
-  component: RouteComponent,
+    loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(programsQueryOptions()),
+    component: ExerciseAnalytics,
 })
-
-function RouteComponent() {
-  return <div>Hello "/_auth/trainer/analytics/"!</div>
-}

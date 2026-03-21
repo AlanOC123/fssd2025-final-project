@@ -6,7 +6,11 @@ from apps.users.serializers import (
     ExperienceLevelSerializer,
     TrainingGoalSerializer,
 )
-from core.serializers import ApexSerializer, LabelLookupSerializer
+from core.serializers import (
+    ApexSerializer,
+    LabelLookupSerializer,
+    NormalisedLookupSerializer,
+)
 
 from .models import (
     Program,
@@ -29,12 +33,12 @@ class ProgramPhaseOptionSerializer(LabelLookupSerializer):
         read_only_fields = fields
 
 
-class ProgramStatusOptionSerializer(LabelLookupSerializer):
+class ProgramStatusOptionSerializer(NormalisedLookupSerializer):
     class Meta(LabelLookupSerializer.Meta):
         model = ProgramStatusOption
 
 
-class ProgramPhaseStatusOptionSerializer(LabelLookupSerializer):
+class ProgramPhaseStatusOptionSerializer(NormalisedLookupSerializer):
     class Meta(LabelLookupSerializer.Meta):
         model = ProgramPhaseStatusOption
 

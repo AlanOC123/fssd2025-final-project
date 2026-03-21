@@ -1,0 +1,24 @@
+#!/bin/bash
+# Usage: ./scripts/backend/backfill_snapshots
+# Runs Django's backfill_snapshots management command.
+# Ensures completed demo exercise records have analytics snapshots.
+
+set -e
+
+cd "$(dirname "$0")/../.."
+
+if [ -z "$1" ]; then
+    echo "Running snapshot backfill..."
+    docker-compose run --rm web python manage.py backfill_snapshots
+
+elif [ "$1" = "--dry-run" ]; then
+    echo "Running snapshot backfill (dry run)..."
+    docker-compose run --rm web python manage.py backfill_snapshots --dry-run
+
+else
+    echo "Unknown argument: $1"
+    echo "Usage: ./scripts/backend/backfill_snapshots [--dry-run]"
+    exit 1
+fi
+
+echo "✅ Snapshots filled."

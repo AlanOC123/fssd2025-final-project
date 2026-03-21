@@ -74,7 +74,9 @@ class Command(BaseCommand):
                     end_date = phase.actual_end_date
                 elif status == ProgramPhaseStatusesVocabulary.ACTIVE:
                     start_date = phase.actual_start_date or (today - timedelta(days=7))
-                    end_date = today  # only generate up to today for active phases
+                    end_date = end_date = today + timedelta(
+                        days=7
+                    )  # only generate up to today for active phases
                 else:
                     continue
 

@@ -43,7 +43,9 @@ client.interceptors.response.use(
         const is401 = error.response?.status === 401
         const isRefreshEndpoint = original.url?.includes('/auth/token/refresh/')
         const isAuthEndpoint =
-            original?.url?.includes('/auth/login/') || original?.url?.includes('/auth/register/')
+            original?.url?.includes('/auth/login/') ||
+            original?.url?.includes('/auth/register/') ||
+            original?.url?.includes('/auth/registration/')
         const alreadyRetried = original._retry
 
         // If it wasnt a 401, is a refresh endpoint and we've already tried, reject.

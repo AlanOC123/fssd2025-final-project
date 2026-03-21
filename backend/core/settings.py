@@ -235,9 +235,9 @@ REST_AUTH = {
         "rest_framework_simplejwt.serializers.TokenObtainPairSerializer"
     ),
     "USER_DETAILS_SERIALIZER": "apps.users.serializers.CustomUserSerializer",
-    "PASSWORD_RESET_SERIALIZER": "dj_rest_auth.serializers.PasswordResetSerializer",
+    "PASSWORD_RESET_SERIALIZER": "apps.users.serializers.ApexPasswordResetSerializer",
     "PASSWORD_RESET_CONFIRM_SERIALIZER": (
-        "dj_rest_auth.serializers.PasswordResetConfirmSerializer"
+        "apps.users.serializers.ApexPasswordResetConfirmSerializer"
     ),
     "PASSWORD_CHANGE_SERIALIZER": "dj_rest_auth.serializers.PasswordChangeSerializer",
     "REGISTER_SERIALIZER": "apps.users.serializers.CustomRegisterSerializer",
@@ -265,7 +265,7 @@ REST_AUTH = {
 }
 
 # All Auth Configuration (Defaults for Now)
-ACCOUNT_PREVENT_ENUMERATION = True
+ACCOUNT_PREVENT_ENUMERATION = False
 RATE_LIMITS = {
     "change_password": "5/m/user",
     "manage_email": "10/m/user",
@@ -282,6 +282,14 @@ ACCOUNT_SIGNUP_FORM_HONEYPOT_FIELD = [
 ]
 
 ACCOUNT_LOGIN_FIELDS = {"email"}
+
+# API-only — disable allauth template/email flows entirely
+ACCOUNT_ADAPTER = "apps.users.adapter.ApexAccountAdapter"
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_ALLOW_REGISTRATION = True
+# Disable enumeration prevention — causes false duplicate errors in API-only mode
 
 AUTH_USER_MODEL = "users.CustomUser"
 
@@ -336,7 +344,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 PASSWORD_RESET_LINK = config(
-    "PASSWORD_RESET_LINK", default="http://localhost:5173/auth"
+    "PASSWORD_RESET_LINK", default="http://localhost:5173/reset-password"
 )
 
 # --- Storage Configuration ---

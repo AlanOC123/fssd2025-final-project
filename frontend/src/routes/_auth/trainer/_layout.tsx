@@ -8,7 +8,7 @@ import type { FallbackProps } from 'react-error-boundary'
 
 function PageLoader() {
     return (
-        <div className="flex items-center justify-center min-h-dvh bg-grey-950">
+        <div className="flex items-center justify-center min-h-dvh w-full bg-grey-950">
             <Spinner className="size-6 text-grey-600" />
         </div>
     )

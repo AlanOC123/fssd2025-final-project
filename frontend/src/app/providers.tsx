@@ -60,7 +60,7 @@ export function App() {
                 bounce={0.5}
             />
             <InnerApp />
-            {import.meta.env.DEV && <ReactQueryDevtools buttonPosition="top-right" />}
+            {import.meta.env.DEV && <ReactQueryDevtools buttonPosition="bottom-right" />}
         </QueryClientProvider>
     )
 }

@@ -1,10 +1,10 @@
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
-import { Dumbbell, LayoutDashboard, LogOut } from 'lucide-react'
+import { Dumbbell, LayoutDashboard, LogOut, Search, UserCircle } from 'lucide-react'
 import { cn } from '@/shared/utils/utils'
 import { ROUTES } from '@/app/constants'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { toast } from '@/shared/utils/toast'
-import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar'
 import {
     Tooltip,
     TooltipContent,
@@ -21,6 +21,8 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
     { label: 'Dashboard', to: ROUTES.client.dashboard, icon: LayoutDashboard },
     { label: 'Workouts', to: ROUTES.client.workouts, icon: Dumbbell },
+    { label: 'Find Trainer', to: ROUTES.client.findTrainer, icon: Search },
+    { label: 'Profile', to: ROUTES.client.profile, icon: UserCircle },
 ]
 
 function NavLink({ item }: { item: NavItem }) {
@@ -85,6 +87,14 @@ function TopNav() {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Avatar size="sm" className="cursor-default">
+                                {user?.profile &&
+                                    'avatar' in user.profile &&
+                                    user.profile.avatar && (
+                                        <AvatarImage
+                                            src={user.profile.avatar}
+                                            alt={user.full_name}
+                                        />
+                                    )}
                                 <AvatarFallback className="bg-brand-800 text-brand-200 text-xs font-semibold">
                                     {initials}
                                 </AvatarFallback>

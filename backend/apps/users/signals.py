@@ -7,6 +7,10 @@ from .models import ClientProfile, CustomUser, TrainerProfile
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
+        if not instance.is_active:
+            CustomUser.objects.filter(pk=instance.pk).update(is_active=True)
+            instance.is_active = True
+
         if instance.is_trainer:
             TrainerProfile.objects.create(user=instance)
         elif instance.is_client:

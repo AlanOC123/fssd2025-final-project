@@ -1,5 +1,31 @@
 import type { ApexModel, LabelLookup } from '@/shared/types/base'
 
+export interface CreateProgramPayload {
+    program_name: string
+    trainer_client_membership_id: string
+    training_goal_id: string
+    experience_level_id: string
+}
+
+export interface CreatePhasePayload {
+    program_id: string
+    phase_option_id: string
+    phase_name: string
+    phase_goal: string
+    sequence_order: number
+    planned_start_date: string
+    planned_end_date: string
+    trainer_notes: string
+    client_notes: string
+}
+
+// ─── Lookups ─────────────────────────────────────────────────────────────────
+
+export interface PhaseOptionLookup extends LabelLookup {
+    default_duration_days: number
+    default_duration_weeks: number
+}
+
 export type ProgramStatusCode =
     | 'CREATING'
     | 'OUT_FOR_REVIEW'
@@ -16,7 +42,7 @@ export interface ProgramPhase extends ApexModel {
     phase_name: string
     phase_goal: string
     sequence_order: number
-    status: LabelLookup & { code: PhaseStatusCode }
+    status: LabelLookup & { code: PhaseStatusCode; order_index?: number; description?: string }
     trainer_notes: string
     client_notes: string
     planned_start_date: string
@@ -32,12 +58,11 @@ export interface ProgramPhase extends ApexModel {
     duration_days: number
     duration_weeks: number
 }
-
 export interface ProgramListItem extends ApexModel {
     program_name: string
     version: number
     trainer_client_membership_id: string
-    status: LabelLookup & { code: ProgramStatusCode }
+    status: LabelLookup & { code: ProgramStatusCode; order_index?: number; description?: string }
     training_goal: LabelLookup
     experience_level: LabelLookup
     planned_start_date: string | null
@@ -63,7 +88,7 @@ export interface ProgramDetail extends ApexModel {
     program_name: string
     version: number
     trainer_client_membership_id: string
-    status: LabelLookup & { code: ProgramStatusCode }
+    status: LabelLookup & { code: ProgramStatusCode; order_index?: number; description?: string }
     training_goal: LabelLookup
     experience_level: LabelLookup
     created_by_trainer_id: string | null

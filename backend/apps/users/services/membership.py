@@ -71,6 +71,8 @@ class MembershipService:
     def request(cls, client_user, trainer_user):
         """Controls lifecycle of a requested membership"""
 
+        print(trainer_user)
+
         if not client_user.is_client:
             raise ValidationError("Membership client must belong to a client user.")
 

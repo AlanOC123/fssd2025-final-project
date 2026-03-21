@@ -121,6 +121,7 @@ class WorkoutReadSerializer(ApexSerializer):
         read_only=True,
     )
     exercises = WorkoutExerciseReadSerializer(many=True, read_only=True)
+    has_session = serializers.SerializerMethodField()
 
     class Meta(ApexSerializer.Meta):
         model = Workout
@@ -129,8 +130,12 @@ class WorkoutReadSerializer(ApexSerializer):
             "planned_date",
             "program_phase_id",
             "exercises",
+            "has_session",
         ]
         read_only_fields = fields
+
+    def get_has_session(self, obj):
+        return WorkoutCompletionRecord.objects.filter(workout=obj).exists()
 
 
 class WorkoutListSerializer(ApexSerializer):
@@ -139,6 +144,8 @@ class WorkoutListSerializer(ApexSerializer):
     Client uses this to pick a workout; WorkoutReadSerializer
     is fetched on detail to get the full exercise/set tree.
     """
+
+    has_session = serializers.SerializerMethodField()
 
     program_phase_id = serializers.UUIDField(
         source="program_phase.id",
@@ -151,9 +158,12 @@ class WorkoutListSerializer(ApexSerializer):
             "workout_name",
             "planned_date",
             "program_phase_id",
+            "has_session",
         ]
         read_only_fields = fields
 
+    def get_has_session(self, obj):
+        return WorkoutCompletionRecord.objects.filter(workout=obj).exists()
 
 # Completion: Write serializers (client) ─
 

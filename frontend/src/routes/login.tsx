@@ -6,7 +6,7 @@ export const Route = createFileRoute('/login')({
     beforeLoad: ({ context }) => {
         if (context.isAuthenticated) {
             throw redirect({
-                to: context.role === 'client' ? ROUTES.client.dashboard : ROUTES.trainer.dashboard,
+                to: context.isClient ? ROUTES.client.dashboard : ROUTES.trainer.dashboard,
             })
         }
     },

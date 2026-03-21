@@ -6,22 +6,18 @@ import { workoutsQueryOptions } from '@/features/workouts/api'
 
 export const Route = createFileRoute('/_auth/client/_layout/dashboard')({
     loader: async ({ context: { queryClient } }) => {
-        // Load memberships and programs in parallel
-        const [, programs] = await Promise.all([
+        const [, , programs] = await Promise.all([
             queryClient.ensureQueryData(membershipsQueryOptions({ status: 'Active' })),
+            queryClient.ensureQueryData(
+                membershipsQueryOptions({ status: 'Pending Trainer Review' }),
+            ),
             queryClient.ensureQueryData(programsQueryOptions({ status: 'IN_PROGRESS' })),
         ])
 
-        // Load workouts for the first active phase if one exists
         const activePhase = programs.results?.[0]?.remaining_phases?.[0]
-        if (activePhase) {
-            await queryClient.ensureQueryData(
-                workoutsQueryOptions({ program_phase: activePhase.id }),
-            )
-        } else {
-            await queryClient.ensureQueryData(workoutsQueryOptions())
-        }
+        await queryClient.ensureQueryData(
+            workoutsQueryOptions(activePhase ? { program_phase: activePhase.id } : undefined),
+        )
     },
-
     component: ClientDashboard,
 })

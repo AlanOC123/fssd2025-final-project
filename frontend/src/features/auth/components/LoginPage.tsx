@@ -29,10 +29,10 @@ export function LoginPage() {
             onSubmit: loginSchema,
         },
         onSubmit: async ({ value }) => {
-            const { error } = await tryCatch(login(value));
+            const { error } = await tryCatch(login(value))
 
             if (error) {
-                toastApiError(error, 'Login failed');
+                toastApiError(error, 'Login failed')
                 return
             }
 
@@ -118,6 +118,16 @@ export function LoginPage() {
                         }
                     </form.Subscribe>
 
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => navigate({ to: ROUTES.forgotPassword })}
+                            className="text-xs text-grey-500 hover:text-brand-400 transition-colors"
+                        >
+                            Forgot password?
+                        </button>
+                    </div>
+
                     <form.Subscribe selector={(s) => s.isSubmitting}>
                         {(isSubmitting) => (
                             <Button
@@ -130,6 +140,16 @@ export function LoginPage() {
                         )}
                     </form.Subscribe>
                 </form>
+
+                <p className="text-center text-xs text-grey-600 mt-4">
+                    Don't have an account?{' '}
+                    <a
+                        href="/register"
+                        className="text-brand-400 hover:text-brand-300 underline-offset-2 hover:underline"
+                    >
+                        Create one
+                    </a>
+                </p>
             </div>
         </div>
     )

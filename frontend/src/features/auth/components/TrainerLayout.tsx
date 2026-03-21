@@ -1,5 +1,13 @@
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
-import { LayoutDashboard, Users, Dumbbell, BookOpen, BarChart2, LogOut } from 'lucide-react'
+import {
+    LayoutDashboard,
+    Users,
+    Dumbbell,
+    BookOpen,
+    BarChart2,
+    LogOut,
+    UserCircle,
+} from 'lucide-react'
 import { cn } from '@/shared/utils/utils'
 import { ROUTES } from '@/app/constants'
 import { useAuth } from '@/shared/hooks/useAuth'
@@ -23,6 +31,7 @@ const NAV_ITEMS: NavItem[] = [
     { label: 'Programs', to: ROUTES.trainer.programs, icon: BookOpen },
     { label: 'Workouts', to: ROUTES.trainer.workouts, icon: Dumbbell },
     { label: 'Analytics', to: ROUTES.trainer.analytics, icon: BarChart2 },
+    { label: 'Profile', to: ROUTES.trainer.profile, icon: UserCircle },
 ]
 
 function NavLink({ item }: { item: NavItem }) {
@@ -96,8 +105,16 @@ function Sidebar() {
                 <div className="flex flex-col items-center gap-2">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-800 text-brand-200 text-xs font-semibold select-none cursor-default">
-                                {initials}
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-brand-800 text-brand-200 text-xs font-semibold select-none cursor-default overflow-hidden">
+                                {user?.profile && 'logo' in user.profile && user.profile.logo ? (
+                                    <img
+                                        src={user.profile.logo}
+                                        alt="Logo"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    initials
+                                )}
                             </div>
                         </TooltipTrigger>
                         <TooltipContent side="right" sideOffset={12}>

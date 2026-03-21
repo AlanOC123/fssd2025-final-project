@@ -27,6 +27,7 @@ drf-spectacular==0.29.0
 factory_boy==3.3.3
 Faker==40.4.0
 filelock==3.21.2
+gunicorn==25.1.0
 identify==2.6.16
 idna==3.11
 inflection==0.5.1

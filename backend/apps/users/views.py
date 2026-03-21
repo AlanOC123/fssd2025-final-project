@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework import filters, mixins, parsers, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -10,23 +10,27 @@ from core.views import NormalisedLookupViewSet
 from .constants import MembershipVocabulary
 from .filters import TrainerClientMembershipFilter
 from .models import (
+    ClientProfile,
     ExperienceLevel,
     TrainerClientMembership,
     TrainerProfile,
     TrainingGoal,
 )
 from .serializers import (
+    ClientProfileSerializer,
     ExperienceLevelSerializer,
     MembershipRequestSerializer,
     TrainerClientMembershipSerializer,
     TrainerMatchingSerializer,
+    TrainerProfileSerializer,
+    TrainerProfileWriteSerializer,
     TrainingGoalSerializer,
 )
 from .services.membership import MembershipService
 
 
 # Protected Viewsets
-class TrainerClientMembershipViewset(
+class TrainerClientMembershipViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
     serializer_class = TrainerClientMembershipSerializer
@@ -63,10 +67,7 @@ class TrainerClientMembershipViewset(
         action_serializer = MembershipRequestSerializer(data=request.data)
         action_serializer.is_valid(raise_exception=True)
 
-        trainer = get_object_or_404(
-            TrainerProfile.objects.select_related("user"),
-            pk=action_serializer.validated_data["trainer_id"],
-        )
+        trainer = action_serializer.validated_data["trainer_id"]
 
         membership = service_action(client_user=client_user, trainer_user=trainer.user)
 
@@ -128,7 +129,7 @@ class TrainerClientMembershipViewset(
         )
 
 
-class TrainerMatchingViewset(viewsets.ReadOnlyModelViewSet):
+class TrainerMatchingViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TrainerMatchingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -168,12 +169,122 @@ class TrainerMatchingViewset(viewsets.ReadOnlyModelViewSet):
         )
 
 
+class TrainerProfileViewSet(
+    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
+):
+    permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get_queryset(self):
+        return TrainerProfile.objects.select_related("user").prefetch_related(
+            "accepted_goals", "accepted_levels"
+        )
+
+    def get_object(self):
+        user = self.request.user
+
+        if not user.is_trainer:
+            raise PermissionDenied("Only trainers can access this endpoint.")
+
+        return get_object_or_404(TrainerProfile, user=user)
+
+    def get_serializer_class(self):
+        if self.action in ("update", "partial_update", "me_update"):
+            return TrainerProfileWriteSerializer
+        return TrainerProfileSerializer
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Handle M2M fields explicitly
+        if "accepted_goals" in serializer.validated_data:
+            instance.accepted_goals.set(serializer.validated_data.pop("accepted_goals"))
+        if "accepted_levels" in serializer.validated_data:
+            instance.accepted_levels.set(
+                serializer.validated_data.pop("accepted_levels")
+            )
+
+        for attr, value in serializer.validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        output = self.get_serializer(instance)
+        return Response(output.data)
+
+    @action(detail=False, methods=["get"], url_path="me")
+    def me(self, request):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["patch"], url_path="me/update")
+    def me_update(self, request):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        if "accepted_goals" in serializer.validated_data:
+            instance.accepted_goals.set(serializer.validated_data.pop("accepted_goals"))
+        if "accepted_levels" in serializer.validated_data:
+            instance.accepted_levels.set(
+                serializer.validated_data.pop("accepted_levels")
+            )
+
+        for attr, value in serializer.validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        output = self.get_serializer(instance)
+        return Response(output.data)
+
+
+class ClientProfileViewSet(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    Allows a client to read and update their own profile.
+    Handles avatar upload (multipart) and goal/level selection.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ClientProfileSerializer
+    http_method_names = ["get", "patch", "head", "options"]
+    parser_classes = [
+        parsers.MultiPartParser,
+        parsers.FormParser,
+        parsers.JSONParser,
+    ]
+
+    def get_object(self):
+        user = self.request.user
+        if not user.is_client:
+            raise PermissionDenied("Only clients can access this endpoint.")
+        return get_object_or_404(ClientProfile, user=user)
+
+    @action(detail=False, methods=["get"], url_path="me")
+    def me(self, request):
+        instance = self.get_object()
+        return Response(self.get_serializer(instance).data)
+
+    @action(detail=False, methods=["patch"], url_path="me/update")
+    def me_update(self, request):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(self.get_serializer(instance).data)
+
+
 # Public Viewsets
-class TrainingGoalViewset(NormalisedLookupViewSet):
+class TrainingGoalViewSet(NormalisedLookupViewSet):
     serializer_class = TrainingGoalSerializer
     queryset = TrainingGoal.objects.all()
 
 
-class ExperienceLevelViewset(NormalisedLookupViewSet):
+class ExperienceLevelViewSet(NormalisedLookupViewSet):
     serializer_class = ExperienceLevelSerializer
     queryset = ExperienceLevel.objects.all()

@@ -28,6 +28,10 @@ export default defineConfig({
                 target: 'http://web:8000',
                 changeOrigin: true,
             },
+            '/media': {
+                target: 'http://web:8000',
+                changeOrigin: true
+            }
         },
     },
 })

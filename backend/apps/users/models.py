@@ -141,7 +141,10 @@ class CustomUser(ApexModel, AbstractBaseUser, PermissionsMixin):
         return super().clean()
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        exclude = []
+        if self.pk:
+            exclude.append("email")
+        self.full_clean(exclude=exclude)
         super().save(*args, **kwargs)
 
     def get_full_name(self):
