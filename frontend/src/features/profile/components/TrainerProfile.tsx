@@ -51,8 +51,6 @@ function EditableName() {
         setEditing(false)
     }
 
-    const trainerProfile = user?.profile as import('@/features/auth/types').TrainerProfile | null
-    const avatarSrc = null // Trainers don't have a personal avatar field — use initials
     const initials =
         `${user?.first_name?.[0] ?? ''}${user?.last_name?.[0] ?? ''}`.toUpperCase() || '?'
 
