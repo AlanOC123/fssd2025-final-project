@@ -362,6 +362,9 @@ if IS_PROD:
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
+    # django-cloudinary-storage references the deprecated STATICFILES_STORAGE
+    # attribute — add it as an alias so collectstatic doesn't crash on Django 5
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
     # django-cloudinary-storage reads CLOUDINARY_URL from the environment directly.
     # Do NOT define CLOUDINARY_STORAGE here — settings.py takes precedence over
     # env vars and will override CLOUDINARY_URL if set.
