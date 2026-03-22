@@ -42,8 +42,6 @@ function TrainerCard({ trainer }: { trainer: TrainerMatchProfile }) {
         onError: (error) => toastApiError(error, 'Failed to send request'),
     })
 
-    console.log(trainer)
-
     return (
         <div className="flex items-start gap-4 px-4 py-4 rounded-xl bg-grey-900 border border-grey-800">
             <Avatar size="lg" className="shrink-0">
