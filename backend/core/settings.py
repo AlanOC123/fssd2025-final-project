@@ -90,6 +90,8 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     # Base Django Middleware
     "django.middleware.security.SecurityMiddleware",
+    # Whitenoise must be immediately after SecurityMiddleware
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -98,8 +100,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Required Middleware by allauth
     "allauth.account.middleware.AccountMiddleware",
-    # Whitenoise required for Cloudinary
-    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -350,18 +350,31 @@ PASSWORD_RESET_LINK = config(
 # --- Storage Configuration ---
 
 # Static Files - Whitenoise
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media Files
 if IS_PROD:
     # Cloudinary - Production
-    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
     # django-cloudinary-storage reads CLOUDINARY_URL from the environment directly.
     # Do NOT define CLOUDINARY_STORAGE here — settings.py takes precedence over
     # env vars and will override CLOUDINARY_URL if set.
 else:
     # Django - Development
-    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
 

@@ -25,13 +25,13 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ALLOWED_HOSTS
-        value: apex-api-oqf8.onrender.com
+        sync: false
       - key: CORS_ALLOWED_ORIGINS
-        value: https://apex-app-zzjc.onrender.com
+        sync: false
       - key: CORS_TRUSTED_ORIGINS
-        value: https://apex-app-zzjc.onrender.com
+        sync: false
       - key: PASSWORD_RESET_LINK
-        value: https://apex-app-zzjc.onrender.com/reset-password
+        sync: false
       - key: DEFAULT_FROM_EMAIL
         value: noreply@apex.com
       - key: BREVO_API_KEY
