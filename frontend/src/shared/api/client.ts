@@ -23,6 +23,15 @@ const client: AxiosInstance = axios.create({
     },
 })
 
+// Request interceptor — remove Content-Type for FormData so Axios sets it
+// automatically with the correct multipart boundary
+client.interceptors.request.use((config) => {
+    if (config.data instanceof FormData) {
+        delete config.headers['Content-Type']
+    }
+    return config
+})
+
 // Response flags
 let isRefreshing = false
 let refreshQueue: Array<(value: unknown) => void> = []

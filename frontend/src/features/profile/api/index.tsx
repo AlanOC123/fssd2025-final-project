@@ -20,9 +20,7 @@ export const trainerProfileApi = {
     updateLogo: (file: File): Promise<TrainerProfile> => {
         const form = new FormData()
         form.append('logo', file)
-        return api.patch<TrainerProfile>('/users/trainer-profile/me/update/', form, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        })
+        return api.patch<TrainerProfile>('/users/trainer-profile/me/update/', form)
     },
 }
 
@@ -35,9 +33,7 @@ export const clientProfileApi = {
     updateAvatar: (file: File): Promise<ClientProfile> => {
         const form = new FormData()
         form.append('avatar', file)
-        return api.patch<ClientProfile>('/users/client-profile/me/update/', form, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        })
+        return api.patch<ClientProfile>('/users/client-profile/me/update/', form)
     },
 }
 

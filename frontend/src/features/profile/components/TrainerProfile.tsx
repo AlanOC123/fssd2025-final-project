@@ -13,7 +13,6 @@ import { useAuth } from '@/shared/hooks/useAuth'
 import { api } from '@/shared/api/client'
 import type { PaginatedResponse, LabelLookup } from '@/shared/types/base'
 import type { TrainerProfile as TrainerProfileType } from '@/features/auth/types'
-import { AvatarUpload } from '@/shared/components/ui/AvatarUpload'
 import { LogoUpload } from '@/shared/components/ui/LogoUpload'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -43,14 +42,14 @@ function EditableName() {
         onError: (error) => toastApiError(error, 'Failed to update name'),
     })
 
-    const avatarMutation = useMutation({
-        mutationFn: (file: File) => authApi.updateAvatar(file),
-        onSuccess: (updatedUser) => {
-            setUser(updatedUser)
-            queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY })
-            toast.success('Avatar updated')
+    // Wire the avatar circle to logo upload so trainers can upload their logo from the top
+    const logoMutation = useMutation({
+        mutationFn: (file: File) => trainerProfileApi.updateLogo(file),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: TRAINER_PROFILE_QUERY_KEY })
+            toast.success('Logo updated')
         },
-        onError: (error) => toastApiError(error, 'Failed to upload avatar'),
+        onError: (error) => toastApiError(error, 'Failed to upload logo'),
     })
 
     const handleCancel = () => {
@@ -59,17 +58,22 @@ function EditableName() {
         setEditing(false)
     }
 
+    const trainerProfile = user?.profile as import('@/features/auth/types').TrainerProfile | null
     const avatarSrc = null // Trainers don't have a personal avatar field — use initials
     const initials =
         `${user?.first_name?.[0] ?? ''}${user?.last_name?.[0] ?? ''}`.toUpperCase() || '?'
 
     return (
         <div className="flex items-center gap-4">
-            <AvatarUpload
-                src={avatarSrc}
-                initials={initials}
-                onFileSelected={(file) => avatarMutation.mutate(file)}
-                isUploading={avatarMutation.isPending}
+            <LogoUpload
+                src={
+                    user?.profile && 'logo' in user.profile
+                        ? (user.profile as import('@/features/auth/types').TrainerProfile).logo ||
+                          null
+                        : null
+                }
+                onFileSelected={(file) => logoMutation.mutate(file)}
+                isUploading={logoMutation.isPending}
             />
 
             <div className="flex-1 min-w-0">

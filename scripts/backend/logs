@@ -1,0 +1,7 @@
+#!/bin/bash
+# Usage: ./scripts/backend/logs
+# Prints web logs
+
+set -e
+
+docker-compose logs -f web

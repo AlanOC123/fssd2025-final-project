@@ -359,27 +359,40 @@ if IS_PROD:
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
         },
         "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
         },
     }
     # django-cloudinary-storage references the deprecated STATICFILES_STORAGE
     # attribute — add it as an alias so collectstatic doesn't crash on Django 5
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
     # django-cloudinary-storage reads CLOUDINARY_URL from the environment directly.
     # Do NOT define CLOUDINARY_STORAGE here — settings.py takes precedence over
     # env vars and will override CLOUDINARY_URL if set.
 else:
     # Django - Development
-    STORAGES = {
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
-    MEDIA_URL = "/media/"
-    MEDIA_ROOT = BASE_DIR / "media"
+    # Set USE_CLOUDINARY=true in .env to test Cloudinary uploads locally
+    USE_CLOUDINARY = config("USE_CLOUDINARY", default=False, cast=bool)
+    if USE_CLOUDINARY:
+        STORAGES = {
+            "default": {
+                "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+            },
+            "staticfiles": {
+                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+            },
+        }
+        STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    else:
+        STORAGES = {
+            "default": {
+                "BACKEND": "django.core.files.storage.FileSystemStorage",
+            },
+            "staticfiles": {
+                "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+            },
+        }
+        MEDIA_URL = "/media/"
+        MEDIA_ROOT = BASE_DIR / "media"
 
 # Cloudinary Configuration
 

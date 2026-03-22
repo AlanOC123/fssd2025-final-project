@@ -174,11 +174,6 @@ class TrainerProfileViewSet(
 ):
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ["get", "patch", "head", "options"]
-    parser_classes = [
-        parsers.MultiPartParser,
-        parsers.FormParser,
-        parsers.JSONParser,
-    ]
 
     def get_queryset(self):
         return TrainerProfile.objects.select_related("user").prefetch_related(
@@ -227,8 +222,13 @@ class TrainerProfileViewSet(
     @action(detail=False, methods=["patch"], url_path="me/update")
     def me_update(self, request):
         instance = self.get_object()
+        print("=== TRAINER PROFILE UPDATE ===")
+        print("Content-Type:", request.content_type)
+        print("request.data keys:", list(request.data.keys()))
+        print("request.FILES keys:", list(request.FILES.keys()))
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        print("validated_data:", serializer.validated_data)
 
         if "accepted_goals" in serializer.validated_data:
             instance.accepted_goals.set(serializer.validated_data.pop("accepted_goals"))
