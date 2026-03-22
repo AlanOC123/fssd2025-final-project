@@ -20,6 +20,7 @@ import { Label } from '@/shared/components/ui/label'
 import { Separator } from '@/shared/components/ui/separator'
 import { Badge } from '@/shared/components/ui/badge'
 import { toast, toastApiError } from '@/shared/utils/toast'
+import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar'
 
 // ─── Editable Name ────────────────────────────────────────────────────────────
 
@@ -42,15 +43,7 @@ function EditableName() {
         onError: (error) => toastApiError(error, 'Failed to update name'),
     })
 
-    // Wire the avatar circle to logo upload so trainers can upload their logo from the top
-    const logoMutation = useMutation({
-        mutationFn: (file: File) => trainerProfileApi.updateLogo(file),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: TRAINER_PROFILE_QUERY_KEY })
-            toast.success('Logo updated')
-        },
-        onError: (error) => toastApiError(error, 'Failed to upload logo'),
-    })
+    // Trainers don't have a personal avatar — logo upload is in EditableBusinessInfo
 
     const handleCancel = () => {
         setFirstName(user?.first_name ?? '')
@@ -58,18 +51,18 @@ function EditableName() {
         setEditing(false)
     }
 
+    const trainerProfile = user?.profile as import('@/features/auth/types').TrainerProfile | null
+    const avatarSrc = null // Trainers don't have a personal avatar field — use initials
+    const initials =
+        `${user?.first_name?.[0] ?? ''}${user?.last_name?.[0] ?? ''}`.toUpperCase() || '?'
+
     return (
         <div className="flex items-center gap-4">
-            <LogoUpload
-                src={
-                    user?.profile && 'logo' in user.profile
-                        ? (user.profile as import('@/features/auth/types').TrainerProfile).logo ||
-                          null
-                        : null
-                }
-                onFileSelected={(file) => logoMutation.mutate(file)}
-                isUploading={logoMutation.isPending}
-            />
+            <Avatar size="lg" className="w-16 h-16 shrink-0">
+                <AvatarFallback className="bg-brand-800 text-brand-200 text-xl font-semibold">
+                    {initials}
+                </AvatarFallback>
+            </Avatar>
 
             <div className="flex-1 min-w-0">
                 {editing ? (
@@ -153,6 +146,7 @@ function EditableName() {
 
 function EditableBusinessInfo({ profile }: { profile: TrainerProfileType }) {
     const queryClient = useQueryClient()
+    const setUser = useAuthStore((s) => s.setUser)
     const [editing, setEditing] = useState(false)
     const [company, setCompany] = useState(profile.company ?? '')
     const [website, setWebsite] = useState(profile.website ?? '')
@@ -176,7 +170,13 @@ function EditableBusinessInfo({ profile }: { profile: TrainerProfileType }) {
     const logoMutation = useMutation({
         mutationFn: (file: File) => trainerProfileApi.updateLogo(file),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: TRAINER_PROFILE_QUERY_KEY })
+            // Re-fetch user so profile.logo updates in the auth store
+            // and the nav sidebar reflects the new logo immediately
+            authApi.getUser().then((u) => {
+                setUser(u)
+                queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY })
+                queryClient.invalidateQueries({ queryKey: TRAINER_PROFILE_QUERY_KEY })
+            })
             toast.success('Logo updated')
         },
         onError: (error) => toastApiError(error, 'Failed to upload logo'),
