@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import serializers
@@ -194,18 +193,36 @@ class ApexPasswordResetSerializer(PasswordResetSerializer):
         token = default_token_generator.make_token(user)
         reset_url = f"{settings.PASSWORD_RESET_LINK}?uid={uid}&token={token}"
 
-        send_mail(
-            subject="Reset your Apex password",
-            message=(
-                f"Hi {user.get_full_name() or user.email},\n\n"
-                f"Click the link below to reset your password:\n\n"
-                f"{reset_url}\n\n"
-                f"If you didn't request this, ignore this email.\n"
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
+        if settings.IS_PROD:
+            from anymail.message import AnymailMessage
+
+            msg = AnymailMessage(
+                subject="Reset your Apex password",
+                body=(
+                    f"Hi {user.get_full_name() or user.email},\n\n"
+                    f"Click the link below to reset your password:\n\n"
+                    f"{reset_url}\n\n"
+                    f"If you didn't request this, ignore this email.\n"
+                ),
+                to=[user.email],
+                from_email=settings.DEFAULT_FROM_EMAIL,
+            )
+            msg.send()
+        else:
+            from django.core.mail import send_mail
+
+            send_mail(
+                subject="Reset your Apex password",
+                message=(
+                    f"Hi {user.get_full_name() or user.email},\n\n"
+                    f"Click the link below to reset your password:\n\n"
+                    f"{reset_url}\n\n"
+                    f"If you didn't request this, ignore this email.\n"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
 
 
 class ApexPasswordResetConfirmSerializer(serializers.Serializer):
