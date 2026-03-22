@@ -144,7 +144,6 @@ function EditableName() {
 
 function EditableBusinessInfo({ profile }: { profile: TrainerProfileType }) {
     const queryClient = useQueryClient()
-    const setUser = useAuthStore((s) => s.setUser)
     const [editing, setEditing] = useState(false)
     const [company, setCompany] = useState(profile.company ?? '')
     const [website, setWebsite] = useState(profile.website ?? '')
@@ -168,13 +167,7 @@ function EditableBusinessInfo({ profile }: { profile: TrainerProfileType }) {
     const logoMutation = useMutation({
         mutationFn: (file: File) => trainerProfileApi.updateLogo(file),
         onSuccess: () => {
-            // Re-fetch user so profile.logo updates in the auth store
-            // and the nav sidebar reflects the new logo immediately
-            authApi.getUser().then((u) => {
-                setUser(u)
-                queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY })
-                queryClient.invalidateQueries({ queryKey: TRAINER_PROFILE_QUERY_KEY })
-            })
+            queryClient.invalidateQueries({ queryKey: TRAINER_PROFILE_QUERY_KEY })
             toast.success('Logo updated')
         },
         onError: (error) => toastApiError(error, 'Failed to upload logo'),
@@ -491,7 +484,7 @@ export function TrainerProfile() {
     if (!profile) return null
 
     return (
-        <div className="p-8 max-w-2xl">
+        <div className="p-8 max-w-2xl w-full">
             <h1 className="text-2xl font-semibold text-grey-50 mb-8">Profile</h1>
 
             {/* Avatar + Name */}

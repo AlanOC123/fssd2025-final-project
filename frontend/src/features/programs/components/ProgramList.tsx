@@ -152,7 +152,7 @@ export function ProgramList() {
 
     return (
         <>
-            <div className="p-8 max-w-3xl">
+            <div className="p-8 max-w-3xl w-full">
                 <div className="flex items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-brand-500/10 text-brand-400">

@@ -192,7 +192,7 @@ export function ProgramDetail({ programId }: { programId: string }) {
 
     return (
         <>
-            <div className="p-8 max-w-3xl">
+            <div className="p-8 max-w-3xl w-full">
                 {/* Back */}
                 <Button
                     variant="ghost"

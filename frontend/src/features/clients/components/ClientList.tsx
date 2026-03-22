@@ -67,7 +67,7 @@ function ClientRow({ membership }: { membership: Membership }) {
 
 function EmptyClients() {
     return (
-        <Empty className="border border-dashed border-grey-800">
+        <Empty className="border border-dashed border-grey-800 min-h-64 w-full">
             <EmptyHeader>
                 <EmptyMedia variant="icon">
                     <UserX />
@@ -87,7 +87,7 @@ export function ClientList() {
     const { data: memberships } = useSuspenseQuery(activeMembershipsQueryOptions())
 
     return (
-        <div className="p-8 max-w-3xl">
+        <div className="p-8 w-full">
             <div className="flex items-center gap-3 mb-8">
                 <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-brand-500/10 text-brand-400">
                     <Users size={18} />
