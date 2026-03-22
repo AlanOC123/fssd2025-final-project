@@ -21,3 +21,5 @@ env/
 # --- Static & Media ---
 staticfiles/
 media/
+
+apps/exercises/management/commands/enrichment_data.json
