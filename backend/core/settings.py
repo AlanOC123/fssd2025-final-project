@@ -36,8 +36,8 @@ NINJA_API_KEY = config(
 
 if IS_PROD:
     BREVO_API_KEY = config("BREVO_API_KEY")
-    CLOUDINARY_API_KEY = config("CLOUDINARY_API_KEY")
-    CLOUDINARY_API_SECRET_KEY = config("CLOUDINARY_API_SECRET_KEY")
+    CLOUDINARY_API_KEY = config("CLOUDINARY_API_KEY", default="")
+    CLOUDINARY_API_SECRET_KEY = config("CLOUDINARY_API_SECRET_KEY", default="")
 
 # --- Host Configuration ---
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost", cast=csv_list)
@@ -356,12 +356,21 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 if IS_PROD:
     # Cloudinary - Production
     DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-    CLOUDINARY_STORAGE = {
-        "CLOUD_NAME": config("CLOUD_NAME"),
-        "API_KEY": CLOUDINARY_API_KEY,
-        "API_SECRET": CLOUDINARY_API_SECRET_KEY,
-    }
+    # Use CLOUDINARY_URL if set (recommended), otherwise fall back to individual vars
+    CLOUDINARY_URL = config("CLOUDINARY_URL", default="")
+    if CLOUDINARY_URL:
+        print("Media Server: Cloudinary (URL)")
+        import cloudinary
+        cloudinary.config(cloudinary_url=CLOUDINARY_URL)
+    else:
+        print("Media Server: Cloudinary (Dict)")
+        CLOUDINARY_STORAGE = {
+            "CLOUD_NAME": config("CLOUD_NAME", default=""),
+            "API_KEY": CLOUDINARY_API_KEY,
+            "API_SECRET": CLOUDINARY_API_SECRET_KEY,
+        }
 else:
+    print("Media Server: Django")
     # Django - Development
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
     MEDIA_URL = "/media/"
