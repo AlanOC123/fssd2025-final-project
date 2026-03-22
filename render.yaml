@@ -25,13 +25,13 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ALLOWED_HOSTS
-        value: apex-api.onrender.com
+        value: apex-api-oqf8.onrender.com
       - key: CORS_ALLOWED_ORIGINS
-        value: https://apex-app.onrender.com
+        value: https://apex-app-zzjc.onrender.com
       - key: CORS_TRUSTED_ORIGINS
-        value: https://apex-app.onrender.com
+        value: https://apex-app-zzjc.onrender.com
       - key: PASSWORD_RESET_LINK
-        value: https://apex-app.onrender.com/reset-password
+        value: https://apex-app-zzjc.onrender.com/reset-password
       - key: DEFAULT_FROM_EMAIL
         value: noreply@apex.com
       - key: BREVO_API_KEY
@@ -48,11 +48,19 @@ services:
   # ─── React Frontend ───────────────────────────────────────────────────────────
   - type: web
     name: apex-app
-    runtime: node
+    runtime: static
     rootDir: frontend
     buildCommand: npm install -g pnpm && pnpm install && pnpm build
-    startCommand: npx serve dist --single --listen $PORT
-    plan: free
-    envVars:
-      - key: NODE_VERSION
-        value: "20"
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://apex-api-oqf8.onrender.com/api/:splat
+      - type: rewrite
+        source: /*
+        destination: /index.html
