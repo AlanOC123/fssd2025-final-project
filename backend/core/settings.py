@@ -356,24 +356,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 if IS_PROD:
     # Cloudinary - Production
     DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
-    # Parse CLOUDINARY_URL into the dict django-cloudinary-storage expects
-    # Format: cloudinary://api_key:api_secret@cloud_name
-    CLOUDINARY_URL = config("CLOUDINARY_URL", default="")
-    if CLOUDINARY_URL:
-        from urllib.parse import urlparse
-
-        _parsed = urlparse(str(CLOUDINARY_URL))
-        CLOUDINARY_STORAGE = {
-            "CLOUD_NAME": _parsed.hostname,
-            "API_KEY": _parsed.username,
-            "API_SECRET": _parsed.password,
-        }
-    else:
-        CLOUDINARY_STORAGE = {
-            "CLOUD_NAME": config("CLOUD_NAME", default=""),
-            "API_KEY": CLOUDINARY_API_KEY,
-            "API_SECRET": CLOUDINARY_API_SECRET_KEY,
-        }
+    # django-cloudinary-storage reads CLOUDINARY_URL from the environment directly.
+    # Do NOT define CLOUDINARY_STORAGE here — settings.py takes precedence over
+    # env vars and will override CLOUDINARY_URL if set.
 else:
     # Django - Development
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
