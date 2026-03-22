@@ -122,7 +122,7 @@ export function ClientDetail({ membershipId }: { membershipId: string }) {
     const otherPrograms = programs.results.filter((p) => p.status.code !== 'IN_PROGRESS')
 
     return (
-        <div className="p-8 max-w-3xl w-full">
+        <div className="p-8 w-full">
             {/* Back */}
             <Button
                 variant="ghost"

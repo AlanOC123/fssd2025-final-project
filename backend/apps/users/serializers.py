@@ -193,8 +193,6 @@ class ApexPasswordResetSerializer(PasswordResetSerializer):
         token = default_token_generator.make_token(user)
         reset_url = f"{settings.PASSWORD_RESET_LINK}?uid={uid}&token={token}"
 
-        print(reset_url)
-
         if settings.IS_PROD:
             from anymail.message import AnymailMessage
 

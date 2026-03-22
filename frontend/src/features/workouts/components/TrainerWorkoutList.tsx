@@ -126,7 +126,7 @@ export function TrainerWorkoutList() {
 
     return (
         <>
-            <div className="p-8 max-w-3xl w-full h-full">
+            <div className="p-8 w-full h-full">
                 {/* Header */}
                 <div className="flex items-center justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3">
