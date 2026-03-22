@@ -90,8 +90,6 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     # Base Django Middleware
     "django.middleware.security.SecurityMiddleware",
-    # Whitenoise must be immediately after SecurityMiddleware
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -359,12 +357,12 @@ if IS_PROD:
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
         },
         "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
         },
     }
     # django-cloudinary-storage references the deprecated STATICFILES_STORAGE
     # attribute — add it as an alias so collectstatic doesn't crash on Django 5
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     # django-cloudinary-storage reads CLOUDINARY_URL from the environment directly.
     # Do NOT define CLOUDINARY_STORAGE here — settings.py takes precedence over
     # env vars and will override CLOUDINARY_URL if set.

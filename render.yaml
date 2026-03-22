@@ -10,7 +10,7 @@ services:
     name: apex-api
     runtime: python
     rootDir: backend
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py seed_db && python.py seed_demo && python.py backfill_snaphots
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py seed_db
     startCommand: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     plan: free
     envVars:
@@ -33,7 +33,7 @@ services:
       - key: PASSWORD_RESET_LINK
         sync: false
       - key: DEFAULT_FROM_EMAIL
-        value: noreply@apex.com
+        sync: false
       - key: BREVO_API_KEY
         sync: false
       - key: CLOUDINARY_API_KEY
@@ -60,7 +60,7 @@ services:
     routes:
       - type: rewrite
         source: /api/*
-        destination: https://apex-api-oqf8.onrender.com/api/:splat
+        destination: https://apex-api-REPLACE.onrender.com/api/:splat
       - type: rewrite
         source: /*
         destination: /index.html
