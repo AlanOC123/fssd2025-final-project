@@ -1,4 +1,5 @@
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
+import { Footer } from '@/shared/components/ui/footer'
 import { Dumbbell, LayoutDashboard, LogOut, Search, UserCircle } from 'lucide-react'
 import { cn } from '@/shared/utils/utils'
 import { ROUTES } from '@/app/constants'
@@ -125,11 +126,12 @@ function TopNav() {
 
 export function ClientLayout() {
     return (
-        <div className="min-h-dvh bg-grey-950">
+        <div className="min-h-dvh bg-grey-950 flex flex-col">
             <TopNav />
-            <main className="pt-14">
+            <main className="pt-14 flex-1">
                 <Outlet />
             </main>
+            <Footer className="ml-0" />
         </div>
     )
 }

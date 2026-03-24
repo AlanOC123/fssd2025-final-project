@@ -1,4 +1,5 @@
 import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
+import { Footer } from '@/shared/components/ui/footer'
 import {
     LayoutDashboard,
     Users,
@@ -147,8 +148,11 @@ export function TrainerLayout() {
         <div className="min-h-dvh bg-grey-950 flex">
             <Sidebar />
             {/* offset content by sidebar width */}
-            <main className="flex-1 ml-16 min-w-0">
-                <Outlet />
+            <main className="flex-1 ml-16 min-w-0 flex flex-col min-h-dvh">
+                <div className="flex-1">
+                    <Outlet />
+                </div>
+                <Footer />
             </main>
         </div>
     )
