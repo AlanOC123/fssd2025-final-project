@@ -28,6 +28,8 @@ from .filters import ProgramFilter
 
 
 class ProgramPhaseOptionViewSet(NormalisedLookupViewSet):
+    """ViewSet for managing ProgramPhaseOption lookup data."""
+
     serializer_class = ProgramPhaseOptionSerializer
     queryset = ProgramPhaseOption.objects.all()
 
@@ -38,11 +40,22 @@ class ProgramPhaseViewSet(
     mixins.CreateModelMixin,
     viewsets.GenericViewSet,
 ):
+    """ViewSet for managing ProgramPhase instances.
+
+    Handles standard CRUD operations and custom lifecycle actions for program phases,
+    enforcing role-based access control for trainers and clients.
+    """
+
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["program", "status", "phase_option", "sequence_order"]
 
     def get_queryset(self):
+        """Filters phases based on the user's role and associated membership.
+
+        Returns:
+            A queryset of ProgramPhase objects filtered by ownership.
+        """
         user = self.request.user
 
         queryset = ProgramPhase.objects.select_related(
@@ -70,6 +83,11 @@ class ProgramPhaseViewSet(
         return queryset.none()
 
     def get_serializer_class(self):
+        """Maps specific actions to their respective serializer classes.
+
+        Returns:
+            The serializer class appropriate for the current action.
+        """
         if self.action == "create":
             return ProgramPhaseWriteSerializer
 
@@ -82,11 +100,28 @@ class ProgramPhaseViewSet(
         return ProgramPhaseReadSerializer
 
     def _raise_drf_validation_error(self, exc):
+        """Converts Django ValidationErrors into DRF ValidationErrors.
+
+        Args:
+            exc: The caught Django ValidationError instance.
+
+        Raises:
+            ValidationError: A DRF-compatible validation error.
+        """
         if hasattr(exc, "message_dict"):
             raise ValidationError(exc.message_dict)
         raise ValidationError(exc.messages)
 
     def _validate_trainer_can_manage_program(self, program):
+        """Enforces permission rules for trainers managing program phases.
+
+        Args:
+            program: The Program instance to validate against.
+
+        Raises:
+            PermissionDenied: If the user is not a trainer, the program is
+                detached, or the trainer does not own the membership.
+        """
         user = self.request.user
 
         if not user.is_trainer:
@@ -103,6 +138,11 @@ class ProgramPhaseViewSet(
             raise PermissionDenied("You can only manage phases for active memberships.")
 
     def create(self, request, *args, **kwargs):
+        """Handles the creation of a new ProgramPhase via ProgramPhaseService.
+
+        Returns:
+            A Response object containing the serialized created phase.
+        """
         input_serializer = self.get_serializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
 
@@ -132,6 +172,16 @@ class ProgramPhaseViewSet(
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
     def _run_phase_action(self, request, service_action, serializer_class=None):
+        """Helper to execute phase-level service actions with validation.
+
+        Args:
+            request: The current request object.
+            service_action: The service method to execute.
+            serializer_class: Optional serializer for input validation.
+
+        Returns:
+            A Response object with updated phase data.
+        """
         phase = self.get_object()
         self._validate_trainer_can_manage_program(phase.program)
 
@@ -157,6 +207,7 @@ class ProgramPhaseViewSet(
 
     @action(detail=True, methods=["post"], url_path="mark-next")
     def mark_next(self, request, pk=None):
+        """Transitions a phase to the 'NEXT' status."""
         return self._run_phase_action(
             request=request,
             service_action=ProgramPhaseService.mark_as_next,
@@ -164,6 +215,7 @@ class ProgramPhaseViewSet(
 
     @action(detail=True, methods=["post"])
     def activate(self, request, pk=None):
+        """Transitions a phase to the 'ACTIVE' status."""
         return self._run_phase_action(
             request=request,
             service_action=ProgramPhaseService.activate_phase,
@@ -171,6 +223,7 @@ class ProgramPhaseViewSet(
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
+        """Transitions a phase to the 'COMPLETED' status."""
         return self._run_phase_action(
             request=request,
             service_action=ProgramPhaseService.complete_phase,
@@ -178,6 +231,7 @@ class ProgramPhaseViewSet(
 
     @action(detail=True, methods=["post"])
     def skip(self, request, pk=None):
+        """Transitions a phase to the 'SKIPPED' status with a reason."""
         return self._run_phase_action(
             request=request,
             service_action=ProgramPhaseService.skip_phase,
@@ -186,6 +240,7 @@ class ProgramPhaseViewSet(
 
     @action(detail=True, methods=["post"], url_path="restore")
     def restore_to_planned(self, request, pk=None):
+        """Restores a phase back to the 'PLANNED' status."""
         return self._run_phase_action(
             request=request,
             service_action=ProgramPhaseService.restore_to_planned,
@@ -198,11 +253,17 @@ class ProgramViewSet(
     mixins.CreateModelMixin,
     viewsets.GenericViewSet,
 ):
+    """ViewSet for managing training Program instances.
+
+    Supports the program lifecycle including creation, review, and execution tracking.
+    """
+
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProgramFilter
 
     def get_queryset(self):
+        """Filters programs based on whether the user is a trainer or a client."""
         user = self.request.user
 
         queryset = Program.objects.select_related(
@@ -233,6 +294,7 @@ class ProgramViewSet(
         return queryset.none()
 
     def get_serializer_class(self):
+        """Returns the serializer class based on the current action."""
         if self.action == "create":
             return ProgramWriteSerializer
 
@@ -251,11 +313,13 @@ class ProgramViewSet(
         return ProgramDetailSerializer
 
     def _raise_drf_validation_error(self, exc):
+        """Common error mapping from Django to DRF."""
         if hasattr(exc, "message_dict"):
             raise ValidationError(exc.message_dict)
         raise ValidationError(exc.messages)
 
     def _validate_trainer_can_manage_membership(self, membership):
+        """Validates that a trainer has administrative rights over a membership."""
         user = self.request.user
 
         if not user.is_trainer:
@@ -275,9 +339,13 @@ class ProgramViewSet(
             )
 
     def _validate_program_access_for_action(self, program):
-        """
-        ProgramService does the heavy domain validation.
-        This method keeps the API-level permission story clear.
+        """Verifies if the requesting user has permission to act on a program.
+
+        Args:
+            program: The Program instance to check.
+
+        Raises:
+            PermissionDenied: If the user does not belong to the program's membership.
         """
         user = self.request.user
         membership = program.trainer_client_membership
@@ -300,6 +368,7 @@ class ProgramViewSet(
         raise PermissionDenied("You do not have access to this program.")
 
     def create(self, request, *args, **kwargs):
+        """Creates a new training program for a client membership."""
         input_serializer = self.get_serializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
 
@@ -323,6 +392,7 @@ class ProgramViewSet(
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
     def _run_program_action(self, request, service_action, serializer_class=None):
+        """Generic runner for program-level lifecycle actions."""
         program = self.get_object()
         self._validate_program_access_for_action(program)
 
@@ -347,6 +417,7 @@ class ProgramViewSet(
 
     @action(detail=True, methods=["post"], url_path="submit-for-review")
     def submit_for_review(self, request, pk=None):
+        """Submits the program for client review."""
         return self._run_program_action(
             request=request,
             service_action=lambda **kwargs: ProgramService.submit_for_review(
@@ -357,6 +428,7 @@ class ProgramViewSet(
 
     @action(detail=True, methods=["post"])
     def review(self, request, pk=None):
+        """Records a client's review decision for the program."""
         return self._run_program_action(
             request=request,
             service_action=lambda **kwargs: ProgramService.reviewed_by_client(
@@ -370,6 +442,7 @@ class ProgramViewSet(
 
     @action(detail=True, methods=["post"])
     def start(self, request, pk=None):
+        """Transitions the program to the 'IN_PROGRESS' state."""
         return self._run_program_action(
             request=request,
             service_action=lambda **kwargs: ProgramService.start_program(
@@ -380,6 +453,7 @@ class ProgramViewSet(
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
+        """Marks the program as successfully completed."""
         return self._run_program_action(
             request=request,
             service_action=lambda **kwargs: ProgramService.complete_program(
@@ -392,6 +466,7 @@ class ProgramViewSet(
 
     @action(detail=True, methods=["post"])
     def abandon(self, request, pk=None):
+        """Records the premature abandonment of a program."""
         return self._run_program_action(
             request=request,
             service_action=lambda **kwargs: ProgramService.abandon_program(

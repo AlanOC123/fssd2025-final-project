@@ -6,8 +6,10 @@ from .views import (
     ExerciseViewSet,
 )
 
+# Standard Django Rest Framework DefaultRouter for automatic URL routing.
 router = DefaultRouter()
 
+# Registration of viewsets with their respective URL prefixes.
 router.register(prefix=r"exercises", viewset=ExerciseViewSet, basename="exercises")
 router.register(prefix=r"equipment", viewset=EquipmentViewSet, basename="equipment")
 

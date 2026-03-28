@@ -20,10 +20,16 @@ from .models import (
 User = get_user_model()
 
 
-# Prescriptive: Write serializers (trainer) ─
+# Prescriptive: Write serializers (trainer)
 
 
 class WorkoutWriteSerializer(ApexSerializer):
+    """Serializer for trainers to create or update Workout instances.
+
+    Attributes:
+        program_phase_id: Write-only primary key for the associated ProgramPhase.
+    """
+
     program_phase_id = serializers.PrimaryKeyRelatedField(
         queryset=ProgramPhase.objects.all(),
         source="program_phase",
@@ -40,6 +46,13 @@ class WorkoutWriteSerializer(ApexSerializer):
 
 
 class WorkoutExerciseWriteSerializer(ApexSerializer):
+    """Serializer for trainers to create or update WorkoutExercise instances.
+
+    Attributes:
+        workout_id: Write-only primary key for the parent Workout.
+        exercise_id: Write-only primary key for the associated Exercise.
+    """
+
     workout_id = serializers.PrimaryKeyRelatedField(
         queryset=Workout.objects.all(),
         source="workout",
@@ -63,6 +76,12 @@ class WorkoutExerciseWriteSerializer(ApexSerializer):
 
 
 class WorkoutSetWriteSerializer(ApexSerializer):
+    """Serializer for trainers to create or update WorkoutSet instances.
+
+    Attributes:
+        workout_exercise_id: Write-only primary key for the parent WorkoutExercise.
+    """
+
     workout_exercise_id = serializers.PrimaryKeyRelatedField(
         queryset=WorkoutExercise.objects.all(),
         source="workout_exercise",
@@ -79,6 +98,17 @@ class WorkoutSetWriteSerializer(ApexSerializer):
         ]
 
     def validate_weight_prescribed(self, value):
+        """Validates that the prescribed weight is non-negative.
+
+        Args:
+            value: The weight value to validate.
+
+        Returns:
+            Decimal: The validated weight.
+
+        Raises:
+            serializers.ValidationError: If weight is less than zero.
+        """
         if value < Decimal("0.00"):
             raise serializers.ValidationError("weight_prescribed cannot be negative.")
         return value
@@ -88,6 +118,8 @@ class WorkoutSetWriteSerializer(ApexSerializer):
 
 
 class WorkoutSetReadSerializer(ApexSerializer):
+    """Read-only serializer for WorkoutSet instances."""
+
     class Meta(ApexSerializer.Meta):
         model = WorkoutSet
         fields = ApexSerializer.Meta.fields + [
@@ -99,7 +131,13 @@ class WorkoutSetReadSerializer(ApexSerializer):
 
 
 class WorkoutExerciseReadSerializer(ApexSerializer):
-    # Lean exercise summary — client doesn't need instructions mid-session
+    """Read-only serializer for WorkoutExercise including nested targets.
+
+    Attributes:
+        exercise: Serialized summary of the exercise definition.
+        sets: Nested list of prescribed sets.
+    """
+
     exercise = ExerciseSerializer(read_only=True)
     sets = WorkoutSetReadSerializer(many=True, read_only=True)
 
@@ -116,6 +154,14 @@ class WorkoutExerciseReadSerializer(ApexSerializer):
 
 
 class WorkoutReadSerializer(ApexSerializer):
+    """Full read-only representation of a Workout with its exercise tree.
+
+    Attributes:
+        program_phase_id: UUID of the parent program phase.
+        exercises: Nested list of exercise slots.
+        has_session: Boolean indicating if a completion record exists.
+    """
+
     program_phase_id = serializers.UUIDField(
         source="program_phase.id",
         read_only=True,
@@ -135,14 +181,21 @@ class WorkoutReadSerializer(ApexSerializer):
         read_only_fields = fields
 
     def get_has_session(self, obj):
+        """Checks for the existence of a completion record for the workout.
+
+        Args:
+            obj: The Workout instance.
+
+        Returns:
+            bool: True if a session record exists.
+        """
         return WorkoutCompletionRecord.objects.filter(workout=obj).exists()
 
 
 class WorkoutListSerializer(ApexSerializer):
-    """
-    Lightweight list view — no nested exercises.
-    Client uses this to pick a workout; WorkoutReadSerializer
-    is fetched on detail to get the full exercise/set tree.
+    """Lightweight list view serializer for Workouts.
+
+    Used for index views where nested exercise data is not required.
     """
 
     has_session = serializers.SerializerMethodField()
@@ -163,12 +216,23 @@ class WorkoutListSerializer(ApexSerializer):
         read_only_fields = fields
 
     def get_has_session(self, obj):
+        """Checks for the existence of a completion record for the workout.
+
+        Args:
+            obj: The Workout instance.
+
+        Returns:
+            bool: True if a session record exists.
+        """
         return WorkoutCompletionRecord.objects.filter(workout=obj).exists()
 
-# Completion: Write serializers (client) ─
+
+# Completion: Write serializers (client)
 
 
 class StartWorkoutSerializer(serializers.Serializer):
+    """Data transfer object for a client starting a workout session."""
+
     workout_id = serializers.PrimaryKeyRelatedField(
         queryset=Workout.objects.all(),
         source="workout",
@@ -176,6 +240,8 @@ class StartWorkoutSerializer(serializers.Serializer):
 
 
 class StartExerciseSerializer(serializers.Serializer):
+    """Data transfer object for a client starting a specific exercise."""
+
     workout_exercise_id = serializers.PrimaryKeyRelatedField(
         queryset=WorkoutExercise.objects.all(),
         source="workout_exercise",
@@ -187,6 +253,8 @@ class StartExerciseSerializer(serializers.Serializer):
 
 
 class CompleteSetSerializer(serializers.Serializer):
+    """Data transfer object for recording set performance."""
+
     workout_set_id = serializers.PrimaryKeyRelatedField(
         queryset=WorkoutSet.objects.all(),
         source="workout_set",
@@ -215,6 +283,8 @@ class CompleteSetSerializer(serializers.Serializer):
 
 
 class SkipSetSerializer(serializers.Serializer):
+    """Data transfer object for recording a skipped set."""
+
     workout_set_id = serializers.PrimaryKeyRelatedField(
         queryset=WorkoutSet.objects.all(),
         source="workout_set",
@@ -229,6 +299,14 @@ class SkipSetSerializer(serializers.Serializer):
 
 
 class WorkoutSetCompletionReadSerializer(ApexSerializer):
+    """Read-only serializer for set performance records.
+
+    Attributes:
+        workout_set_id: UUID of the original prescription.
+        reps_diff: Difference between actual and prescribed reps.
+        weight_diff: Difference between actual and prescribed weight.
+    """
+
     workout_set_id = serializers.UUIDField(
         source="workout_set.id",
         read_only=True,
@@ -258,6 +336,13 @@ class WorkoutSetCompletionReadSerializer(ApexSerializer):
 
 
 class WorkoutExerciseCompletionReadSerializer(ApexSerializer):
+    """Read-only serializer for exercise performance records.
+
+    Attributes:
+        workout_exercise_id: UUID of the original prescription.
+        set_records: Nested list of set performance data.
+    """
+
     workout_exercise_id = serializers.UUIDField(
         source="workout_exercise.id",
         read_only=True,
@@ -277,6 +362,15 @@ class WorkoutExerciseCompletionReadSerializer(ApexSerializer):
 
 
 class WorkoutCompletionReadSerializer(ApexSerializer):
+    """Read-only serializer for full workout session records.
+
+    Attributes:
+        workout_id: UUID of the prescribed workout.
+        client_id: UUID of the user.
+        exercise_records: Nested list of exercise performance data.
+        duration_s: Calculated session duration in seconds.
+    """
+
     workout_id = serializers.UUIDField(
         source="workout.id",
         read_only=True,

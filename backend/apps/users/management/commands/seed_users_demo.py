@@ -1,3 +1,10 @@
+"""Management command to seed demo trainer and client users.
+
+This command reads a JSON file containing trainer and client definitions,
+creates the respective user accounts with appropriate role flags, and
+establishes initial trainer-client memberships.
+"""
+
 import json
 import os
 
@@ -18,9 +25,29 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
+    """Management command to seed user demo data from a JSON source.
+
+    This class handles the creation of users, their associated profiles,
+    and membership relations, ensuring idempotency by checking for
+    existing records before creation.
+    """
+
     help = "Seeds demo trainer and client users."
 
     def handle(self, *args, **kwargs):
+        """Executes the seeding process.
+
+        Parses the demo data file and iterates through trainers and clients
+        to populate the database with a functional demo environment.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Raises:
+            FileNotFoundError: If the source JSON file is missing.
+            Exception: For general errors during the database population process.
+        """
         base_dir = os.path.dirname(__file__)
         file_path = os.path.join(base_dir, "seed_users_demo_data.json")
 
@@ -31,7 +58,7 @@ class Command(BaseCommand):
 
             trainer_profiles = {}
 
-            # ── Trainers ──────────────────────────────────────────────────────
+            # --- Trainer Seeding ---
             for t_data in data["trainers"]:
                 is_superuser = t_data.get("is_superuser", False)
 
@@ -54,18 +81,20 @@ class Command(BaseCommand):
                             last_name=t_data["last_name"],
                             is_trainer=True,
                             is_client=False,
-                            is_active=True
+                            is_active=True,
                         )
                     self.stdout.write(f"    Created Trainer: {trainer_user.email}")
                 else:
                     trainer_user = User.objects.get(email=t_data["email"])
                     self.stdout.write(f"    Trainer exists: {trainer_user.email}")
 
+                # Manage the One-to-One TrainerProfile
                 t_profile, _ = TrainerProfile.objects.get_or_create(
                     user=trainer_user,
                     defaults={"company": t_data.get("company", "")},
                 )
 
+                # Assign accepted goals and experience levels to the trainer
                 for code in t_data.get("accepted_goals", []):
                     try:
                         t_profile.accepted_goals.add(
@@ -90,7 +119,7 @@ class Command(BaseCommand):
 
                 trainer_profiles[t_data["email"]] = t_profile
 
-            # ── Clients ───────────────────────────────────────────────────────
+            # --- Client Seeding ---
             for c_data in data["clients"]:
                 if not User.objects.filter(email=c_data["email"]).exists():
                     client_user = User.objects.create_user(
@@ -114,12 +143,13 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.ERROR(f"    Lookup data missing: {e}"))
                     continue
 
+                # Manage the One-to-One ClientProfile
                 c_profile, _ = ClientProfile.objects.update_or_create(
                     user=client_user,
                     defaults={"goal": goal_obj, "level": level_obj},
                 )
 
-                # ── Membership ─────────────────────────────────────────────
+                # --- Membership Relationship Establishment ---
                 trainer_email = c_data.get("trainer_email")
                 status_code = c_data.get("membership_status")
 
@@ -161,7 +191,8 @@ class Command(BaseCommand):
 
                 if created:
                     self.stdout.write(
-                        f"    Created Membership: {trainer_email} <-> {client_user.email} [{status_code}]"
+                        f"    Created Membership: {trainer_email} <-> "
+                        f"{client_user.email} [{status_code}]"
                     )
                 else:
                     self.stdout.write(

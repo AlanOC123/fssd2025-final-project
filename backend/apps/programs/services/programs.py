@@ -8,16 +8,36 @@ from .program_phases import ProgramPhaseService
 
 
 class ProgramService:
+    """Domain service for managing training program lifecycles.
+
+    Handles business logic for program state transitions, ownership validation,
+    and membership-dependent status updates.
+    """
+
     @staticmethod
     def _now():
+        """Returns the current timezone-aware datetime."""
         return timezone.now()
 
     @classmethod
     def _get_status(cls, code):
+        """Retrieves a ProgramStatusOption instance by its code.
+
+        Args:
+            code: The string identifier for the status.
+
+        Returns:
+            The ProgramStatusOption instance.
+        """
         return ProgramStatusOption.objects.get(code=code)
 
     @classmethod
     def _transition_map(cls):
+        """Defines allowed state transitions for a Program.
+
+        Returns:
+            A dictionary mapping current status codes to sets of valid target codes.
+        """
         return {
             ProgramStatusesVocabulary.CREATING: {
                 ProgramStatusesVocabulary.REVIEW,
@@ -42,6 +62,15 @@ class ProgramService:
 
     @classmethod
     def _validate_transition(cls, current_code, target_code):
+        """Validates if a status transition is permitted.
+
+        Args:
+            current_code: The current status code of the program.
+            target_code: The status code intended for transition.
+
+        Raises:
+            ValidationError: If the transition is not allowed by the transition map.
+        """
         allowed = cls._transition_map().get(current_code, set())
 
         if target_code not in allowed:
@@ -51,6 +80,17 @@ class ProgramService:
 
     @classmethod
     def _validate_trainer(cls, trainer_user):
+        """Validates that the user is a trainer with a valid profile.
+
+        Args:
+            trainer_user: The user object to validate.
+
+        Returns:
+            The validated user object.
+
+        Raises:
+            ValidationError: If the user is missing, not a trainer, or lacks a profile.
+        """
         if not trainer_user:
             raise ValidationError("Trainer user not found.")
 
@@ -64,6 +104,17 @@ class ProgramService:
 
     @classmethod
     def _validate_client(cls, client_user):
+        """Validates that the user is a client with a valid profile.
+
+        Args:
+            client_user: The user object to validate.
+
+        Returns:
+            The validated user object.
+
+        Raises:
+            ValidationError: If the user is missing, not a client, or lacks a profile.
+        """
         if not client_user:
             raise ValidationError("Client user not found.")
 
@@ -77,6 +128,17 @@ class ProgramService:
 
     @classmethod
     def _validate_membership(cls, membership):
+        """Validates that a membership exists and is active.
+
+        Args:
+            membership: The TrainerClientMembership instance.
+
+        Returns:
+            The validated membership instance.
+
+        Raises:
+            ValidationError: If membership is missing or inactive.
+        """
         if not membership:
             raise ValidationError("Missing membership.")
 
@@ -89,13 +151,18 @@ class ProgramService:
 
     @classmethod
     def _validate_program(cls, program):
+        """Validates existence of a program instance."""
         if not program:
             raise ValidationError("Missing program.")
-
         return program
 
     @classmethod
     def _validate_program_has_phases(cls, program):
+        """Ensures a program has at least one phase before proceeding.
+
+        Raises:
+            ValidationError: If the program has no created phases.
+        """
         if not program.has_created_phases:
             raise ValidationError("No phases have been created for this program yet.")
 
@@ -103,6 +170,7 @@ class ProgramService:
 
     @classmethod
     def _validate_trainer_owns_membership(cls, membership, trainer_user):
+        """Validates that the trainer is the owner of the membership."""
         if membership.trainer != trainer_user.trainer_profile:
             raise ValidationError(
                 "Only the trainer associated with the membership can perform this action."
@@ -110,6 +178,7 @@ class ProgramService:
 
     @classmethod
     def _validate_client_owns_membership(cls, membership, client_user):
+        """Validates that the client is the owner of the membership."""
         if membership.client != client_user.client_profile:
             raise ValidationError(
                 "Only the client associated with the membership can perform this action."
@@ -117,24 +186,30 @@ class ProgramService:
 
     @classmethod
     def _enforce_trainer_membership_access(cls, membership, trainer_user):
+        """Full access validation for trainers over a specific membership."""
         membership = cls._validate_membership(membership)
         trainer_user = cls._validate_trainer(trainer_user)
-
         cls._validate_trainer_owns_membership(membership, trainer_user)
-
         return membership, trainer_user
 
     @classmethod
     def _enforce_client_membership_access(cls, membership, client_user):
+        """Full access validation for clients over a specific membership."""
         membership = cls._validate_membership(membership)
         client_user = cls._validate_client(client_user)
-
         cls._validate_client_owns_membership(membership, client_user)
-
         return membership, client_user
 
     @classmethod
     def _inactive_membership_cleanup(cls, program):
+        """Automatically abandons a program when its membership becomes inactive.
+
+        Args:
+            program: The Program instance to cleanup.
+
+        Returns:
+            The updated Program instance.
+        """
         abandoned_code = ProgramStatusesVocabulary.ABANDONED
         abandoned_status = cls._get_status(abandoned_code)
 
@@ -149,11 +224,15 @@ class ProgramService:
         )
 
         program.save()
-
         return program
 
     @classmethod
     def _enforce_active_program_membership(cls, program):
+        """Ensures the membership is active or performs cleanup.
+
+        Raises:
+            ValidationError: Explaining the program was archived due to inactive membership.
+        """
         membership = program.trainer_client_membership
 
         try:
@@ -179,6 +258,18 @@ class ProgramService:
         training_goal,
         experience_level,
     ):
+        """Creates a new program in the 'CREATING' state.
+
+        Args:
+            trainer_user: The User instance creating the program.
+            trainer_client_membership: The associated membership.
+            program_name: Name of the program.
+            training_goal: The TrainingGoal instance.
+            experience_level: The ExperienceLevel instance.
+
+        Returns:
+            The newly created Program instance.
+        """
         cls._enforce_trainer_membership_access(
             membership=trainer_client_membership,
             trainer_user=trainer_user,
@@ -205,6 +296,15 @@ class ProgramService:
         program,
         submitting_user,
     ):
+        """Submits a program to the client for review.
+
+        Args:
+            program: The Program instance.
+            submitting_user: The trainer submitting the program.
+
+        Returns:
+            The updated Program instance.
+        """
         program = cls._validate_program(program)
         program = cls._validate_program_has_phases(program)
         program, membership = cls._enforce_active_program_membership(program)
@@ -235,6 +335,20 @@ class ProgramService:
         feedback_notes,
         is_accepted,
     ):
+        """Processes the outcome of a client review.
+
+        Args:
+            program: The Program instance.
+            reviewed_by_user: The client user performing the review.
+            feedback_notes: Optional feedback from the client.
+            is_accepted: Boolean indicating if the program was approved.
+
+        Returns:
+            The updated Program instance.
+
+        Raises:
+            ValidationError: If rejection is submitted without feedback notes.
+        """
         program = cls._validate_program(program)
         program = cls._validate_program_has_phases(program)
         program, membership = cls._enforce_active_program_membership(program)
@@ -279,6 +393,15 @@ class ProgramService:
         program,
         started_by_user,
     ):
+        """Transitions a 'READY' program to 'IN_PROGRESS'.
+
+        Args:
+            program: The Program instance.
+            started_by_user: The client user starting the program.
+
+        Returns:
+            The updated Program instance.
+        """
         program = cls._validate_program(program)
         program = cls._validate_program_has_phases(program)
         program, membership = cls._enforce_active_program_membership(program)
@@ -308,6 +431,19 @@ class ProgramService:
         completed_by_user,
         completion_notes,
     ):
+        """Marks a program as completed.
+
+        Args:
+            program: The Program instance.
+            completed_by_user: The client user completing the program.
+            completion_notes: Summary of progress made.
+
+        Returns:
+            The updated Program instance.
+
+        Raises:
+            ValidationError: If phases are unfinished or notes are missing.
+        """
         program = cls._validate_program(program)
         program = cls._validate_program_has_phases(program)
         program, membership = cls._enforce_active_program_membership(program)
@@ -348,6 +484,19 @@ class ProgramService:
         abandoned_by_user,
         abandonment_reason,
     ):
+        """Prematurely stops a program lifecycle.
+
+        Args:
+            program: The Program instance.
+            abandoned_by_user: Either trainer or client owner.
+            abandonment_reason: Explanation for stopping.
+
+        Returns:
+            The updated Program instance.
+
+        Raises:
+            ValidationError: If reason is missing or phases are not finished/archived.
+        """
         program = cls._validate_program(program)
 
         if not abandonment_reason:

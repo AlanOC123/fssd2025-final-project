@@ -31,16 +31,19 @@ from apps.workouts.serializers import (
 )
 from apps.workouts.services.completions import WorkoutCompletionService
 
-# Helpers
-
 
 def _raise_drf_validation_error(exc):
+    """Maps a Django ValidationError to a DRF ValidationError.
+
+    Args:
+        exc: The Django ValidationError instance to map.
+
+    Raises:
+        ValidationError: A DRF validation error containing the exception messages.
+    """
     if hasattr(exc, "message_dict"):
         raise ValidationError(exc.message_dict)
     raise ValidationError(exc.messages)
-
-
-# Prescriptive viewsets (trainer-authored content)
 
 
 class WorkoutViewSet(
@@ -51,11 +54,15 @@ class WorkoutViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    """
-    Trainer: full CRUD within a phase that is still live.
-    Client: read-only, scoped to their own memberships.
-    Phase-liveness guard lives in the service; this viewset
-    handles routing and ownership scoping only.
+    """ViewSet for managing trainer-authored workout prescriptions.
+
+    Trainers have full CRUD access within their programs, while clients
+    have read-only access to workouts assigned to them.
+
+    Attributes:
+        permission_classes: List of permission classes (IsAuthenticated).
+        filter_backends: List of filter backend classes.
+        filterset_fields: Fields available for filtering.
     """
 
     permission_classes = [permissions.IsAuthenticated]
@@ -63,6 +70,11 @@ class WorkoutViewSet(
     filterset_fields = ["program_phase", "planned_date"]
 
     def get_queryset(self):
+        """Retrieves workouts scoped by the user's role and membership.
+
+        Returns:
+            QuerySet: Workouts filtered for the specific trainer or client.
+        """
         user = self.request.user
 
         queryset = Workout.objects.select_related(
@@ -91,6 +103,11 @@ class WorkoutViewSet(
         return queryset.none()
 
     def get_serializer_class(self):
+        """Determines the serializer class based on the request action.
+
+        Returns:
+            type: The appropriate serializer class.
+        """
         if self.action in ("create", "update", "partial_update"):
             return WorkoutWriteSerializer
         if self.action == "list":
@@ -98,6 +115,15 @@ class WorkoutViewSet(
         return WorkoutReadSerializer
 
     def _validate_trainer_owns_workout(self, workout):
+        """Validates that the current user is the trainer for the workout.
+
+        Args:
+            workout: The Workout instance to validate.
+
+        Raises:
+            PermissionDenied: If the user is not a trainer, or does not own
+                 the membership associated with the workout.
+        """
         user = self.request.user
 
         if not user.is_trainer:
@@ -113,13 +139,26 @@ class WorkoutViewSet(
             raise PermissionDenied("You can only modify workouts you created.")
 
     def create(self, request, *args, **kwargs):
+        """Creates a new workout prescription.
+
+        Args:
+            request: The HTTP request.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: The serialized workout data and 201 status.
+
+        Raises:
+            PermissionDenied: If the user is not authorized to create workouts
+                in the specified program phase.
+        """
         if not request.user.is_trainer:
             raise PermissionDenied("Only trainers can create workouts.")
 
         input_serializer = self.get_serializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
 
-        # Ownership check against the phase being written to
         phase = input_serializer.validated_data["program_phase"]
         membership = phase.program.trainer_client_membership
 
@@ -137,6 +176,16 @@ class WorkoutViewSet(
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
+        """Updates an existing workout prescription.
+
+        Args:
+            request: The HTTP request.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: The updated workout data.
+        """
         workout = self.get_object()
         self._validate_trainer_owns_workout(workout)
 
@@ -156,6 +205,16 @@ class WorkoutViewSet(
         return Response(output_serializer.data)
 
     def destroy(self, request, *args, **kwargs):
+        """Deletes a workout prescription.
+
+        Args:
+            request: The HTTP request.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: 204 No Content status.
+        """
         workout = self.get_object()
         self._validate_trainer_owns_workout(workout)
         workout.delete()
@@ -170,11 +229,24 @@ class WorkoutExerciseViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    """ViewSet for managing exercise slots within a workout prescription.
+
+    Attributes:
+        permission_classes: List of permission classes (IsAuthenticated).
+        filter_backends: List of filter backend classes.
+        filterset_fields: Fields available for filtering.
+    """
+
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["workout"]
 
     def get_queryset(self):
+        """Retrieves exercise slots scoped by the user's role.
+
+        Returns:
+            QuerySet: WorkoutExercises filtered for the trainer or client.
+        """
         user = self.request.user
 
         queryset = WorkoutExercise.objects.select_related(
@@ -198,11 +270,24 @@ class WorkoutExerciseViewSet(
         return queryset.none()
 
     def get_serializer_class(self):
+        """Determines the serializer class based on the action.
+
+        Returns:
+            type: The appropriate serializer class.
+        """
         if self.action in ("create", "update", "partial_update"):
             return WorkoutExerciseWriteSerializer
         return WorkoutExerciseReadSerializer
 
     def _validate_trainer_owns_exercise(self, workout_exercise):
+        """Validates that the current user owns the workout containing the exercise.
+
+        Args:
+            workout_exercise: The WorkoutExercise instance to validate.
+
+        Raises:
+            PermissionDenied: If the user is not a trainer or does not own the workout.
+        """
         user = self.request.user
 
         if not user.is_trainer:
@@ -217,6 +302,19 @@ class WorkoutExerciseViewSet(
             )
 
     def create(self, request, *args, **kwargs):
+        """Adds a new exercise slot to a workout.
+
+        Args:
+            request: The HTTP request.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: The created exercise slot and 201 status.
+
+        Raises:
+            PermissionDenied: If unauthorized to add exercises to the workout.
+        """
         if not request.user.is_trainer:
             raise PermissionDenied("Only trainers can add exercises to a workout.")
 
@@ -240,6 +338,16 @@ class WorkoutExerciseViewSet(
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
+        """Updates an exercise slot prescription.
+
+        Args:
+            request: The HTTP request.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: The updated exercise slot data.
+        """
         workout_exercise = self.get_object()
         self._validate_trainer_owns_exercise(workout_exercise)
 
@@ -259,6 +367,16 @@ class WorkoutExerciseViewSet(
         return Response(output_serializer.data)
 
     def destroy(self, request, *args, **kwargs):
+        """Deletes an exercise slot from a workout.
+
+        Args:
+            request: The HTTP request.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: 204 No Content status.
+        """
         workout_exercise = self.get_object()
         self._validate_trainer_owns_exercise(workout_exercise)
         workout_exercise.delete()
@@ -273,11 +391,24 @@ class WorkoutSetViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
+    """ViewSet for managing prescribed sets within a workout exercise.
+
+    Attributes:
+        permission_classes: List of permission classes (IsAuthenticated).
+        filter_backends: List of filter backend classes.
+        filterset_fields: Fields available for filtering.
+    """
+
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["workout_exercise"]
 
     def get_queryset(self):
+        """Retrieves prescribed sets scoped by role and membership.
+
+        Returns:
+            QuerySet: WorkoutSets filtered for the user.
+        """
         user = self.request.user
 
         queryset = WorkoutSet.objects.select_related(
@@ -300,11 +431,24 @@ class WorkoutSetViewSet(
         return queryset.none()
 
     def get_serializer_class(self):
+        """Determines the serializer class based on the action.
+
+        Returns:
+            type: The appropriate serializer class.
+        """
         if self.action in ("create", "update", "partial_update"):
             return WorkoutSetWriteSerializer
         return WorkoutSetReadSerializer
 
     def _validate_trainer_owns_set(self, workout_set):
+        """Validates ownership of the workout exercise containing the set.
+
+        Args:
+            workout_set: The WorkoutSet instance to validate.
+
+        Raises:
+            PermissionDenied: If unauthorized to modify this set.
+        """
         user = self.request.user
 
         if not user.is_trainer:
@@ -317,6 +461,19 @@ class WorkoutSetViewSet(
             raise PermissionDenied("You can only modify sets for your own workouts.")
 
     def create(self, request, *args, **kwargs):
+        """Adds a prescribed set to an exercise.
+
+        Args:
+            request: The HTTP request.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: The created set data and 201 status.
+
+        Raises:
+            PermissionDenied: If unauthorized to add sets to the exercise.
+        """
         if not request.user.is_trainer:
             raise PermissionDenied("Only trainers can add sets to an exercise.")
 
@@ -342,6 +499,16 @@ class WorkoutSetViewSet(
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
+        """Updates a prescribed set.
+
+        Args:
+            request: The HTTP request.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: The updated set data.
+        """
         workout_set = self.get_object()
         self._validate_trainer_owns_set(workout_set)
 
@@ -361,13 +528,20 @@ class WorkoutSetViewSet(
         return Response(output_serializer.data)
 
     def destroy(self, request, *args, **kwargs):
+        """Deletes a prescribed set.
+
+        Args:
+            request: The HTTP request.
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Response: 204 No Content status.
+        """
         workout_set = self.get_object()
         self._validate_trainer_owns_set(workout_set)
         workout_set.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# Completion viewsets (client-driven session recording)
 
 
 class WorkoutSessionViewSet(
@@ -375,10 +549,16 @@ class WorkoutSessionViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    """
-    The entry point for a client's workout session.
-    All writes go through named actions backed by WorkoutCompletionService.
-    No raw create/update/delete — the service owns the write contract.
+    """ViewSet for managing client workout completion sessions.
+
+    Writes are handled through specific actions (start, skip, finish)
+    rather than standard CRUD to maintain service-layer integrity.
+
+    Attributes:
+        permission_classes: List of permission classes (IsAuthenticated).
+        filter_backends: List of filter backend classes.
+        filterset_fields: Fields available for filtering.
+        serializer_class: Default serializer for read operations.
     """
 
     permission_classes = [permissions.IsAuthenticated]
@@ -387,6 +567,11 @@ class WorkoutSessionViewSet(
     serializer_class = WorkoutCompletionReadSerializer
 
     def get_queryset(self):
+        """Retrieves session records for the client or trainer.
+
+        Returns:
+            QuerySet: WorkoutCompletionRecords filtered for the user.
+        """
         user = self.request.user
 
         queryset = WorkoutCompletionRecord.objects.select_related(
@@ -414,6 +599,16 @@ class WorkoutSessionViewSet(
         return queryset.none()
 
     def _run_session_action(self, request, service_method, serializer_class=None):
+        """Executes a session-level service operation.
+
+        Args:
+            request: The HTTP request.
+            service_method: The service function to call.
+            serializer_class: Optional serializer for input validation.
+
+        Returns:
+            Response: The resulting session record data.
+        """
         validated_data = {}
         if serializer_class is not None:
             input_serializer = serializer_class(data=request.data)
@@ -435,6 +630,7 @@ class WorkoutSessionViewSet(
 
     @action(detail=False, methods=["post"], url_path="start")
     def start(self, request):
+        """Starts a new workout session."""
         return self._run_session_action(
             request=request,
             service_method=WorkoutCompletionService.start_workout,
@@ -443,6 +639,7 @@ class WorkoutSessionViewSet(
 
     @action(detail=False, methods=["post"], url_path="skip")
     def skip(self, request):
+        """Marks a workout as skipped."""
         return self._run_session_action(
             request=request,
             service_method=WorkoutCompletionService.skip_workout,
@@ -451,6 +648,15 @@ class WorkoutSessionViewSet(
 
     @action(detail=True, methods=["post"], url_path="finish")
     def finish(self, request, pk=None):
+        """Finalizes an active workout session.
+
+        Args:
+            request: The HTTP request.
+            pk: Primary key of the session record.
+
+        Returns:
+            Response: The finalized session data.
+        """
         session = self.get_object()
 
         try:
@@ -472,9 +678,13 @@ class WorkoutExerciseRecordViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    """
-    Records a client starting or skipping an exercise within a session.
-    No raw create — use the start and skip actions.
+    """ViewSet for managing exercise completion records within a session.
+
+    Attributes:
+        permission_classes: List of permission classes (IsAuthenticated).
+        filter_backends: List of filter backend classes.
+        filterset_fields: Fields available for filtering.
+        serializer_class: Default serializer for read operations.
     """
 
     permission_classes = [permissions.IsAuthenticated]
@@ -483,6 +693,11 @@ class WorkoutExerciseRecordViewSet(
     serializer_class = WorkoutExerciseCompletionReadSerializer
 
     def get_queryset(self):
+        """Retrieves exercise records for the user.
+
+        Returns:
+            QuerySet: WorkoutExerciseCompletionRecords filtered for the user.
+        """
         user = self.request.user
 
         queryset = WorkoutExerciseCompletionRecord.objects.select_related(
@@ -506,6 +721,15 @@ class WorkoutExerciseRecordViewSet(
         return queryset.none()
 
     def _run_exercise_action(self, request, service_method):
+        """Executes an exercise-level service operation.
+
+        Args:
+            request: The HTTP request.
+            service_method: The service function to call.
+
+        Returns:
+            Response: The resulting exercise record data.
+        """
         input_serializer = StartExerciseSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
 
@@ -525,6 +749,7 @@ class WorkoutExerciseRecordViewSet(
 
     @action(detail=False, methods=["post"], url_path="start")
     def start(self, request):
+        """Starts an exercise within a session."""
         return self._run_exercise_action(
             request=request,
             service_method=WorkoutCompletionService.start_exercise,
@@ -532,6 +757,7 @@ class WorkoutExerciseRecordViewSet(
 
     @action(detail=False, methods=["post"], url_path="skip")
     def skip(self, request):
+        """Marks an exercise as skipped within a session."""
         return self._run_exercise_action(
             request=request,
             service_method=WorkoutCompletionService.skip_exercise,
@@ -543,9 +769,15 @@ class WorkoutSetRecordViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    """
-    The atomic write unit of the completion side.
-    Clients complete or skip individual sets in real time.
+    """ViewSet for managing individual set completion records.
+
+    Clients use this to record actual reps and weight for each set.
+
+    Attributes:
+        permission_classes: List of permission classes (IsAuthenticated).
+        filter_backends: List of filter backend classes.
+        filterset_fields: Fields available for filtering.
+        serializer_class: Default serializer for read operations.
     """
 
     permission_classes = [permissions.IsAuthenticated]
@@ -554,6 +786,11 @@ class WorkoutSetRecordViewSet(
     serializer_class = WorkoutSetCompletionReadSerializer
 
     def get_queryset(self):
+        """Retrieves set records for the user.
+
+        Returns:
+            QuerySet: WorkoutSetCompletionRecords filtered for the user.
+        """
         user = self.request.user
 
         queryset = WorkoutSetCompletionRecord.objects.select_related(
@@ -577,6 +814,7 @@ class WorkoutSetRecordViewSet(
 
     @action(detail=False, methods=["post"], url_path="complete")
     def complete(self, request):
+        """Records performance metrics for a completed set."""
         input_serializer = CompleteSetSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
         data = input_serializer.validated_data
@@ -601,6 +839,7 @@ class WorkoutSetRecordViewSet(
 
     @action(detail=False, methods=["post"], url_path="skip")
     def skip(self, request):
+        """Marks a specific set as skipped."""
         input_serializer = SkipSetSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
         data = input_serializer.validated_data

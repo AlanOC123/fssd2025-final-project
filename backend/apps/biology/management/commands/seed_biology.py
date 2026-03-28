@@ -17,9 +17,22 @@ from apps.biology.models import (
 
 
 class Command(BaseCommand):
+    """Management command to seed biology lookup tables and relational data.
+
+    This command reads a JSON file containing biomechanical data (planes,
+    directions, joints, muscles, etc.) and populates the database using
+    update_or_create logic to ensure idempotency.
+    """
+
     help = "Seeds biology lookup tables and joint/muscle relational data"
 
     def handle(self, *args, **kwargs):
+        """Executes the seeding logic by parsing the local JSON data file.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
         base_dir = os.path.dirname(__file__)
         file_path = os.path.join(base_dir, "seed_biology_data.json")
         objects_written = 0
@@ -29,7 +42,7 @@ class Command(BaseCommand):
                 data = json.load(f)
                 self.stdout.write("Seeding Biology Data...")
 
-            # ── Simple lookups ────────────────────────────────────────────────
+            # --- Simple lookup table population ---
 
             for item in data.get("planes_of_motion", []):
                 _, created = PlaneOfMotion.objects.update_or_create(
@@ -81,7 +94,7 @@ class Command(BaseCommand):
                     self.stdout.write(f"    Created MuscleGroup: {item['label']}")
                     objects_written += 1
 
-            # ── Muscles (require direction + group FKs) ───────────────────────
+            # --- Muscles (requires resolving foreign keys for direction and group) ---
 
             for item in data.get("muscles", []):
                 direction = AnatomicalDirection.objects.get(code=item["direction"])
@@ -98,7 +111,7 @@ class Command(BaseCommand):
                     self.stdout.write(f"    Created Muscle: {item['label']}")
                     objects_written += 1
 
-            # ── Joint actions + muscle involvements ───────────────────────────
+            # --- Joint actions and their respective muscle involvements ---
 
             for action_data in data.get("joint_actions", []):
                 joint = Joint.objects.get(code=action_data["joint"])

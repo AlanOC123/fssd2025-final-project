@@ -11,14 +11,16 @@ from core.models import ApexModel
 User = get_user_model()
 
 
-# Prescription Path
-
-
 class Workout(ApexModel):
-    """
-    A trainer-authored workout attached to a program phase.
+    """A trainer-authored workout attached to a program phase.
+
     Immutable once the phase is COMPLETED or ABANDONED — enforced by the service,
     not the model.
+
+    Attributes:
+        workout_name: The descriptive name of the workout.
+        planned_date: The date the workout is scheduled to occur.
+        program_phase: Foreign key to the associated ProgramPhase.
     """
 
     workout_name = models.CharField(max_length=300)
@@ -38,9 +40,16 @@ class Workout(ApexModel):
 
 
 class WorkoutExercise(ApexModel):
-    """
-    An ordered exercise slot within a workout.
+    """An ordered exercise slot within a workout.
+
     sets_prescribed drives how many WorkoutSet rows the trainer creates.
+
+    Attributes:
+        exercise: Foreign key to the Exercise definition.
+        workout: Foreign key to the parent Workout.
+        order: The sequence of the exercise within the workout.
+        sets_prescribed: The number of sets the trainer intends for this exercise.
+        trainer_notes: Optional instructions provided by the trainer.
     """
 
     exercise = models.ForeignKey(
@@ -69,11 +78,17 @@ class WorkoutExercise(ApexModel):
         ]
 
     def clean(self):
+        """Validates that prescribed sets are positive.
+
+        Raises:
+            ValidationError: If sets_prescribed is less than or equal to 0.
+        """
         super().clean()
         if self.sets_prescribed <= 0:
             raise ValidationError("sets_prescribed must be greater than 0.")
 
     def save(self, *args, **kwargs):
+        """Performs full validation before saving the instance."""
         self.full_clean()
         return super().save(*args, **kwargs)
 
@@ -82,9 +97,15 @@ class WorkoutExercise(ApexModel):
 
 
 class WorkoutSet(ApexModel):
-    """
-    A single prescribed set within a workout exercise.
+    """A single prescribed set within a workout exercise.
+
     Represents the trainer's target — the completion record tracks what actually happened.
+
+    Attributes:
+        workout_exercise: Foreign key to the parent WorkoutExercise.
+        set_order: The sequence of the set within the exercise.
+        reps_prescribed: Target number of repetitions.
+        weight_prescribed: Target weight for the set.
     """
 
     workout_exercise = models.ForeignKey(
@@ -107,6 +128,11 @@ class WorkoutSet(ApexModel):
         ]
 
     def clean(self):
+        """Validates prescriptions for reps and weight.
+
+        Raises:
+            ValidationError: If reps_prescribed is not positive or weight is negative.
+        """
         super().clean()
         if self.reps_prescribed <= 0:
             raise ValidationError("reps_prescribed must be greater than 0.")
@@ -114,6 +140,7 @@ class WorkoutSet(ApexModel):
             raise ValidationError("weight_prescribed cannot be negative.")
 
     def save(self, *args, **kwargs):
+        """Performs full validation before saving the instance."""
         self.full_clean()
         return super().save(*args, **kwargs)
 
@@ -121,16 +148,18 @@ class WorkoutSet(ApexModel):
         return f"Set {self.set_order} of {self.workout_exercise}"
 
 
-# Completion Path
-
-
 class WorkoutCompletionRecord(ApexModel):
-    """
-    Created when a client starts or skips a workout. Acts as the session root —
-    all exercise and set records hang off this.
+    """Record created when a client starts or skips a workout.
 
+    Acts as the session root — all exercise and set records hang off this.
     Terminal skip: if is_skipped=True, no ExerciseCompletionRecords should exist.
-    Enforced by the service, not the model.
+
+    Attributes:
+        workout: One-to-one link to the prescribed Workout.
+        client: Foreign key to the User performing the workout.
+        is_skipped: Boolean indicating if the workout was bypassed.
+        started_at: Timestamp for the start of the session.
+        completed_at: Optional timestamp for when the session ended.
     """
 
     workout = models.OneToOneField(
@@ -154,6 +183,11 @@ class WorkoutCompletionRecord(ApexModel):
         ordering = ["started_at"]
 
     def clean(self):
+        """Ensures chronological consistency between start and completion.
+
+        Raises:
+            ValidationError: If completed_at occurs before started_at.
+        """
         super().clean()
         if (
             self.completed_at
@@ -163,11 +197,17 @@ class WorkoutCompletionRecord(ApexModel):
             raise ValidationError("completed_at cannot be before started_at.")
 
     def save(self, *args, **kwargs):
+        """Performs full validation before saving the instance."""
         self.full_clean()
         return super().save(*args, **kwargs)
 
     @property
     def duration_s(self):
+        """Calculates the total duration of the workout in seconds.
+
+        Returns:
+            int: The duration in seconds, or None if completion time is missing.
+        """
         if self.started_at and self.completed_at:
             return int((self.completed_at - self.started_at).total_seconds())
         return None
@@ -177,11 +217,16 @@ class WorkoutCompletionRecord(ApexModel):
 
 
 class WorkoutExerciseCompletionRecord(ApexModel):
-    """
-    Created when a client starts or skips an exercise during a session.
+    """Record created when a client starts or skips an exercise.
 
     Terminal skip: if is_skipped=True, no SetCompletionRecords should exist.
-    Enforced by the service, not the model.
+
+    Attributes:
+        workout_completion_record: Foreign key to the parent session record.
+        workout_exercise: One-to-one link to the prescribed WorkoutExercise.
+        is_skipped: Boolean indicating if the exercise was bypassed.
+        started_at: Timestamp for the start of the exercise.
+        completed_at: Optional timestamp for when the exercise ended.
     """
 
     workout_completion_record = models.ForeignKey(
@@ -204,6 +249,11 @@ class WorkoutExerciseCompletionRecord(ApexModel):
         ordering = ["started_at"]
 
     def clean(self):
+        """Ensures chronological consistency between start and completion.
+
+        Raises:
+            ValidationError: If completed_at occurs before started_at.
+        """
         super().clean()
         if (
             self.completed_at
@@ -213,6 +263,7 @@ class WorkoutExerciseCompletionRecord(ApexModel):
             raise ValidationError("completed_at cannot be before started_at.")
 
     def save(self, *args, **kwargs):
+        """Performs full validation before saving the instance."""
         self.full_clean()
         return super().save(*args, **kwargs)
 
@@ -221,12 +272,19 @@ class WorkoutExerciseCompletionRecord(ApexModel):
 
 
 class WorkoutSetCompletionRecord(ApexModel):
-    """
-    The atomic unit of completion data. Created per set as the client works through
-    an exercise. Stores actual vs prescribed for diff calculations.
+    """The atomic unit of completion data for a single set.
 
-    reps_completed and weight_completed are 0 when is_skipped=True — use
-    is_skipped as the authoritative signal, not zero values.
+    Stores actual performance metrics vs prescribed targets.
+
+    Attributes:
+        exercise_completion_record: Foreign key to the parent exercise record.
+        workout_set: One-to-one link to the prescribed WorkoutSet.
+        is_skipped: Boolean indicating if the set was bypassed.
+        completed_at: Timestamp for when the set was finished.
+        reps_completed: Actual number of repetitions performed.
+        weight_completed: Actual weight used for the set.
+        difficulty_rating: Client-reported RPE or difficulty (1-10).
+        reps_in_reserve: Client-reported repetitions left in the tank.
     """
 
     exercise_completion_record = models.ForeignKey(
@@ -256,6 +314,15 @@ class WorkoutSetCompletionRecord(ApexModel):
         ordering = ["workout_set__set_order"]
 
     def clean(self):
+        """Validates performance metrics and metadata.
+
+        Validates that completed sets have positive reps, non-negative weight,
+        a timestamp, and that subjective ratings are within valid ranges.
+
+        Raises:
+            ValidationError: If performance metrics are invalid or ratings
+                are out of bounds.
+        """
         super().clean()
         if not self.is_skipped:
             if self.reps_completed <= 0:
@@ -276,17 +343,28 @@ class WorkoutSetCompletionRecord(ApexModel):
             raise ValidationError("reps_in_reserve cannot be negative.")
 
     def save(self, *args, **kwargs):
+        """Performs full validation before saving the instance."""
         self.full_clean()
         return super().save(*args, **kwargs)
 
     @property
     def reps_diff(self):
+        """Calculates difference between actual and prescribed reps.
+
+        Returns:
+            int: The difference in reps, or None if skipped.
+        """
         if self.is_skipped:
             return None
         return self.reps_completed - self.workout_set.reps_prescribed
 
     @property
     def weight_diff(self):
+        """Calculates difference between actual and prescribed weight.
+
+        Returns:
+            Decimal: The weight difference, or None if skipped.
+        """
         if self.is_skipped:
             return None
         return self.weight_completed - self.workout_set.weight_prescribed

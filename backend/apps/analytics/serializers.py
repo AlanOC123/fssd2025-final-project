@@ -2,6 +2,12 @@ from rest_framework import serializers
 
 
 class MuscleLoadSerializer(serializers.Serializer):
+    """Serializer for individual muscle load contributions.
+
+    This serializer breaks down the load impact on a specific muscle,
+    including its role (agonist, etc.) and associated muscle group.
+    """
+
     muscle_id = serializers.UUIDField(source="muscle.id")
     muscle_label = serializers.CharField(source="muscle.label")
     muscle_group = serializers.CharField(
@@ -12,9 +18,10 @@ class MuscleLoadSerializer(serializers.Serializer):
 
 
 class ExerciseLoadHistorySerializer(serializers.Serializer):
-    """
-    Per-session load entry for a specific exercise.
-    Used to drive the historic load chart on the trainer dashboard.
+    """Serializer for per-session load entries for a specific exercise.
+
+    Used primarily to drive historical load charts on the trainer dashboard,
+    providing a comprehensive view of session performance and muscle breakdown.
     """
 
     session_id = serializers.UUIDField()
@@ -27,9 +34,11 @@ class ExerciseLoadHistorySerializer(serializers.Serializer):
 
 
 class NextSessionRecommendationSerializer(serializers.Serializer):
-    """
-    Next session prescription window for a specific exercise.
-    Provides the trainer with the load target and weight band to guide programming.
+    """Serializer for next session prescription windows.
+
+    Provides trainers with specific load targets and weight ranges (floor/ceiling)
+    based on historical performance and progression caps to guide future
+    programming.
     """
 
     exercise_id = serializers.UUIDField(source="exercise.id")
@@ -51,9 +60,10 @@ class NextSessionRecommendationSerializer(serializers.Serializer):
 
 
 class ExerciseSnapshotSerializer(serializers.Serializer):
-    """
-    Serializes a stored ExerciseSessionSnapshot.
-    Used by the load history view when snapshot data is available.
+    """Serializer for stored ExerciseSessionSnapshot model instances.
+
+    Used by the load history views to expose captured metrics from specific
+    completed sessions when snapshot data is available.
     """
 
     session_id = serializers.UUIDField(source="session.id")

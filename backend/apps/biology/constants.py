@@ -1,10 +1,22 @@
 class PlaneOfMotionVocabulary:
+    """Constants for anatomical planes of motion.
+
+    Defines the standard planes used to describe human movement and
+    anatomical positioning.
+    """
+
     SAGITTAL = "SAGITTAL"
     FRONTAL = "FRONTAL"
     TRANSVERSE = "TRANSVERSE"
 
 
 class AnatomicalDirectionVocabulary:
+    """Constants for anatomical directions and positions.
+
+    Provides a standardized vocabulary for describing the location of
+    structures relative to the body or other structures.
+    """
+
     ANTERIOR = "ANTERIOR"
     POSTERIOR = "POSTERIOR"
     LATERAL = "LATERAL"
@@ -14,6 +26,12 @@ class AnatomicalDirectionVocabulary:
 
 
 class MovementPatternVocabulary:
+    """Constants for joint movement patterns.
+
+    Contains standard terminology for describing specific angular
+    movements of the human skeletal system.
+    """
+
     FLEXION = "FLEXION"
     EXTENSION = "EXTENSION"
     ABDUCTION = "ABDUCTION"
@@ -31,6 +49,11 @@ class MovementPatternVocabulary:
 
 
 class MuscleRoleVocabulary:
+    """Constants for functional muscle classifications.
+
+    Defines roles muscles play during a specific movement or joint action.
+    """
+
     AGONIST = "AGONIST"
     ANTAGONIST = "ANTAGONIST"
     SYNERGIST = "SYNERGIST"
@@ -38,6 +61,12 @@ class MuscleRoleVocabulary:
 
 
 class JointVocabulary:
+    """Constants for major anatomical joints.
+
+    Standardizes the identifiers for primary joints involved in movement
+    analysis and exercise programming.
+    """
+
     SHOULDER = "SHOULDER"
     ELBOW = "ELBOW"
     SPINE = "SPINE"
@@ -48,6 +77,12 @@ class JointVocabulary:
 
 
 class MuscleGroupVocabulary:
+    """Constants for major muscle groups.
+
+    Categorizes specific muscles into broader functional or anatomical
+    groups for training and analysis purposes.
+    """
+
     CHEST = "CHEST"
     SHOULDER = "SHOULDER"
     TRICEPS = "TRICEPS"

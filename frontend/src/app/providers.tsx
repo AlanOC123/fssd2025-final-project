@@ -7,6 +7,11 @@ import { useAuthStore } from '@/features/auth'
 import { useAuthQuery } from '@/features/auth/hooks/useAuthQuery'
 import { GoeyToaster } from '@/shared/components/ui/goey-toaster'
 
+/**
+ * Global QueryClient configuration.
+ * Sets default stale time to 5 minutes and implements a custom retry strategy
+ * that prevents retrying on client-side (4xx) errors.
+ */
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -22,6 +27,11 @@ const queryClient = new QueryClient({
     },
 })
 
+/**
+ * Component responsible for managing the application's routing and auth context.
+ * It waits for the initial authentication check before rendering the router.
+ * * @returns {JSX.Element} The initialized router provider or a loading spinner.
+ */
 function InnerApp() {
     const user = useAuthStore((s) => s.user)
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -42,14 +52,22 @@ function InnerApp() {
                 isAuthenticated,
                 isTrainer: user?.is_trainer,
                 isClient: user?.is_client,
-                isAdmin: user?.role === "admin",
-                queryClient
+                isAdmin: user?.role === 'admin',
+                queryClient,
             }}
         />
     )
 }
 
+/**
+ * Main entry point for the React application.
+ * Wraps the application with global providers including React Query and the Toaster.
+ * * @returns {JSX.Element} The root application component.
+ */
 export function App() {
+    // Determine development environment using a build-compatible check.
+    const isDev = !!import.meta.env.DEV
+
     return (
         <QueryClientProvider client={queryClient}>
             <GoeyToaster
@@ -60,7 +78,7 @@ export function App() {
                 bounce={0.5}
             />
             <InnerApp />
-            {import.meta.env.DEV && <ReactQueryDevtools buttonPosition="bottom-right" />}
+            {isDev && <ReactQueryDevtools buttonPosition="bottom-right" />}
         </QueryClientProvider>
     )
 }

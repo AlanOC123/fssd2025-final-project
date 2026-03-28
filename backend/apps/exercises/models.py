@@ -7,6 +7,12 @@ from core.models import ApexModel, NormalisedLookupModel
 
 
 class JointRangeOfMotion(NormalisedLookupModel):
+    """Represents the range of motion for a joint during an exercise.
+
+    Attributes:
+        impact_factor: A decimal representing the relative impact or load intensity.
+    """
+
     impact_factor = models.DecimalField(max_digits=3, decimal_places=2)
 
     class Meta:
@@ -15,19 +21,33 @@ class JointRangeOfMotion(NormalisedLookupModel):
 
 
 class ExercisePhase(NormalisedLookupModel):
+    """Represents a specific phase of an exercise (e.g., Eccentric, Concentric)."""
+
     class Meta:
         verbose_name_plural = "Exercise Phases"
 
 
 class Equipment(NormalisedLookupModel):
+    """Represents the physical equipment required to perform an exercise."""
+
     class Meta:
         verbose_name_plural = "Equipment"
 
 
 class Exercise(ApexModel):
-    """
-    Core exercise model.
-    Name must match Ninja API naming convention for API call.
+    """Core exercise model containing descriptive data and metadata.
+
+    The api_name attribute must match the Ninja API naming convention for
+    external synchronization.
+
+    Attributes:
+        exercise_name: Unique display name of the exercise.
+        api_name: Unique identifier used for API integrations.
+        equipment: Many-to-many relationship with Equipment models.
+        experience_level: Foreign key to user ExperienceLevel.
+        instructions: Detailed steps for performing the exercise.
+        safety_tips: Precautions to avoid injury.
+        is_enriched: Boolean flag indicating if instructions and safety tips are present.
     """
 
     exercise_name = models.CharField(max_length=100, unique=True)
@@ -47,6 +67,12 @@ class Exercise(ApexModel):
         ordering = ["exercise_name"]
 
     def clean(self):
+        """Validates that enriched exercises contain required content.
+
+        Raises:
+            ValidationError: If is_enriched is True but instructions or
+                safety_tips are missing.
+        """
         super().clean()
 
         if self.is_enriched and (not self.instructions or not self.safety_tips):
@@ -57,6 +83,7 @@ class Exercise(ApexModel):
             )
 
     def save(self, *args, **kwargs):
+        """Updates enrichment status and performs full validation before saving."""
         self.is_enriched = bool(self.instructions and self.safety_tips)
 
         self.full_clean()
@@ -67,8 +94,11 @@ class Exercise(ApexModel):
 
 
 class ExerciseMovement(ApexModel):
-    """
-    Breakdown of exercises into its individual movements.
+    """Relates an exercise to its constituent movement phases.
+
+    Attributes:
+        phase: The specific movement phase (e.g., Concentric).
+        exercise: The exercise this movement belongs to.
     """
 
     phase = models.ForeignKey(
@@ -94,9 +124,15 @@ class ExerciseMovement(ApexModel):
 
 
 class JointContribution(ApexModel):
-    """
-    Allows accurate tracking of load across exercise movements.
-    Enables partial loading of movement given range of motion
+    """Maps specific joint actions and ranges of motion to an exercise movement.
+
+    This model enables granular tracking of muscle load and partial loading
+    calculations based on the specific range of motion involved in a movement.
+
+    Attributes:
+        joint_action: The anatomical action occurring at the joint.
+        joint_range_of_motion: The extent of the movement.
+        exercise_movement: The specific phase/movement being described.
     """
 
     joint_action = models.ForeignKey(

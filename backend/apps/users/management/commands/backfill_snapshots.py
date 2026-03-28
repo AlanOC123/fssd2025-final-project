@@ -1,16 +1,9 @@
-"""
-Management command: backfill_snapshots
+"""Management command to backfill exercise session snapshots.
 
-Computes and saves ExerciseSessionSnapshot rows for every completed
-WorkoutCompletionRecord that doesn't already have snapshots.
-
-Run once after seeding demo data, or any time completion records exist
-without corresponding snapshots (e.g. if the snapshot service was added
-after historical data was already in the DB).
-
-Usage:
-    python manage.py backfill_snapshots
-    python manage.py backfill_snapshots --dry-run
+This command computes and saves ExerciseSessionSnapshot rows for every completed
+WorkoutCompletionRecord that does not already have associated snapshots. This is
+typically used after seeding demo data or when the snapshot service is
+introduced to a system with historical data.
 """
 
 from django.core.management.base import BaseCommand
@@ -21,9 +14,20 @@ from apps.workouts.models import WorkoutCompletionRecord
 
 
 class Command(BaseCommand):
+    """Command to compute missing snapshots for completed workout sessions.
+
+    Iterates through completed, non-skipped sessions and triggers the snapshot
+    service for each associated exercise.
+    """
+
     help = "Backfill ExerciseSessionSnapshot for all completed sessions missing them."
 
     def add_arguments(self, parser):
+        """Defines the command line arguments for the backfill command.
+
+        Args:
+            parser: The argument parser instance.
+        """
         parser.add_argument(
             "--dry-run",
             action="store_true",
@@ -31,9 +35,19 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """Executes the backfill logic.
+
+        Finds eligible sessions, iterates through their exercises, and invokes
+         the snapshot computation service within atomic transactions.
+
+        Args:
+            *args: Variable length argument list.
+            **options: A dictionary of command line arguments (e.g., dry_run).
+        """
         dry_run = options["dry_run"]
 
         # Find completed, non-skipped sessions that have exercise records
+        # and are currently missing snapshots.
         sessions = (
             WorkoutCompletionRecord.objects.filter(
                 completed_at__isnull=False,
@@ -58,6 +72,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Found {total} session(s) missing snapshots.")
 
         if dry_run:
+            self.stdout.write(self.style.WARNING("--- DRY RUN MODE ---"))
             for session in sessions:
                 program = session.workout.program_phase.program
                 exercises = {
@@ -77,6 +92,7 @@ class Command(BaseCommand):
 
         for session in sessions:
             program = session.workout.program_phase.program
+            # Prefetch exercise records to avoid N+1 queries during the inner loop
             exercises = {
                 er.workout_exercise.exercise
                 for er in session.exercise_records.filter(
@@ -95,11 +111,14 @@ class Command(BaseCommand):
                         if snapshot:
                             created += 1
                         else:
+                            # If the service returns None, it usually means
+                            # there was no relevant load to capture.
                             skipped += 1
                 except Exception as e:
                     errors += 1
                     self.stderr.write(
-                        f"  Error on session={session.id} exercise={exercise.exercise_name}: {e}"
+                        f"  Error on session={session.id} "
+                        f"exercise={exercise.exercise_name}: {e}"
                     )
 
         self.stdout.write(

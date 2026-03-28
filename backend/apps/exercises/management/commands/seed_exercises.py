@@ -20,16 +20,36 @@ from apps.users.models import ExperienceLevel
 
 
 class Command(BaseCommand):
+    """Django management command to seed exercise and biomechanical reference data.
+
+    This command orchestrates the population of exercise phases, joint ranges of
+    motion, exercises (enriched via API Ninja), equipment, and complex
+    biomechanical movement data. It utilizes a local cache to minimize
+    redundant API calls.
+    """
+
     help = (
         "Seeds exercise phases, ROM lookups, exercises, and biomechanical movement data"
     )
 
     def handle(self, *args, **kwargs):
+        """Executes the seeding logic for the exercise module.
+
+        Args:
+            *args: Positional arguments passed to the command.
+            **kwargs: Keyword arguments passed to the command.
+
+        Raises:
+            ImproperlyConfigured: If the required NINJA_API_KEY is not in settings.
+            ValueError: If referenced lookup data (ExperienceLevel, ExercisePhase,
+                Joint, etc.) is missing from the database.
+        """
         base_dir = os.path.dirname(__file__)
         file_path = os.path.join(base_dir, "seed_exercises_data.json")
         cache_file_path = os.path.join(base_dir, "enrichment_data.json")
         objects_written = 0
 
+        # Load or initialize the API response cache to minimize external requests.
         api_cache = {}
         if os.path.exists(cache_file_path):
             try:
@@ -81,7 +101,8 @@ class Command(BaseCommand):
                 api_name = exercise_data["api_name"]
                 level_code = exercise_data["level"]
 
-                # ── API Ninja enrichment (cached) ─────────────────────────────
+                # Fetch supplemental data from API Ninjas with a 2-second delay
+                # to respect potential rate limits if not already cached.
                 if api_name not in api_cache:
                     self.stdout.write(f"    Fetching from API Ninja: {api_name}")
                     time.sleep(2)
@@ -136,6 +157,7 @@ class Command(BaseCommand):
                     if equip_created:
                         objects_written += 1
 
+                # Update enrichment status based on presence of API-provided content.
                 if exercise_obj.instructions and exercise_obj.safety_tips:
                     exercise_obj.is_enriched = True
                 exercise_obj.save()
@@ -173,6 +195,7 @@ class Command(BaseCommand):
                         except Joint.DoesNotExist:
                             raise ValueError(f"Joint '{joint_code}' not found")
 
+                        # Link biomechanical data: Joint + MovementPattern -> JointAction.
                         movement_pattern = MovementPattern.objects.get(code=action_code)
                         joint_action_obj = JointAction.objects.filter(
                             joint=joint_obj,

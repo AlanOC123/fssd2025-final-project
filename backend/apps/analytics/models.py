@@ -1,4 +1,3 @@
-
 from django.db import models
 
 from apps.exercises.models import Exercise
@@ -8,6 +7,24 @@ from core.models import ApexModel
 
 
 class ExerciseSessionSnapshot(ApexModel):
+    """Model representing a point-in-time analytical capture of an exercise session.
+
+    This class stores computed metrics such as estimated one-rep max (1RM),
+    actual session load, and theoretical target loads. It serves as a
+    historical record for progression analysis and load distribution tracking.
+
+    Attributes:
+        program: The training program associated with the snapshot.
+        exercise: The specific exercise being analyzed.
+        session: The workout completion record that triggered the snapshot.
+        one_rep_max: The estimated 1RM calculated from the session's performance.
+        session_load: The total volume or load achieved during the session.
+        target_load: The theoretical load the user was expected to achieve.
+        weight_floor: The calculated minimum weight recommended for the session.
+        weight_ceiling: The calculated maximum weight recommended for the session.
+        computed_at: The timestamp indicating when these metrics were generated.
+    """
+
     program = models.ForeignKey(
         to=Program,
         on_delete=models.CASCADE,
@@ -60,6 +77,8 @@ class ExerciseSessionSnapshot(ApexModel):
     computed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        """Metadata for the ExerciseSessionSnapshot model."""
+
         constraints = [
             models.UniqueConstraint(
                 fields=["program", "exercise", "session"],
@@ -72,6 +91,11 @@ class ExerciseSessionSnapshot(ApexModel):
         ]
 
     def __str__(self):
+        """Returns a human-readable identifier for the snapshot.
+
+        Returns:
+            str: A formatted string identifying the exercise, program, and session.
+        """
         return (
             f"Snapshot: {self.exercise.exercise_name} "
             f"in {self.program.program_name} "

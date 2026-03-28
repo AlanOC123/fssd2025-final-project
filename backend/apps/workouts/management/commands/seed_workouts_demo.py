@@ -23,9 +23,22 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
+    """Management command to seed workout history and future sessions.
+
+    This command reads from a JSON data source to populate the database with
+    a realistic workout history for demo purposes, including progressive
+    overload calculations and completion records for past dates.
+    """
+
     help = "Seeds workout history and future sessions for the demo program"
 
     def handle(self, *args, **kwargs):
+        """Executes the seeding logic for the workout demo data.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
         base_dir = os.path.dirname(__file__)
         file_path = os.path.join(base_dir, "seed_workouts_demo_data.json")
 
@@ -33,8 +46,6 @@ class Command(BaseCommand):
             with open(file_path) as f:
                 data = json.load(f)
                 self.stdout.write("Seeding Workout Demo Data...")
-
-            # ── Resolve program and client ─────────────────────────────────────
 
             try:
                 client_user = User.objects.get(email=data["client_email"])
@@ -47,9 +58,6 @@ class Command(BaseCommand):
                 return
 
             today = timezone.localdate()
-            timezone.now()
-
-            # ── Process each phase ────────────────────────────────────────────
 
             for phase in program.phases.order_by("sequence_order"):
                 phase_code = phase.phase_option.code
@@ -68,15 +76,14 @@ class Command(BaseCommand):
                 workouts = routine["workouts"]
                 workout_idx = 0
 
-                # Derive date window for this phase
+                # Determine the date range based on the current phase status.
                 if status == ProgramPhaseStatusesVocabulary.COMPLETED:
                     start_date = phase.actual_start_date
                     end_date = phase.actual_end_date
                 elif status == ProgramPhaseStatusesVocabulary.ACTIVE:
                     start_date = phase.actual_start_date or (today - timedelta(days=7))
-                    end_date = end_date = today + timedelta(
-                        days=7
-                    )  # only generate up to today for active phases
+                    # Generate up to one week ahead for active phases to simulate scheduling.
+                    end_date = today + timedelta(days=7)
                 else:
                     continue
 
@@ -91,7 +98,7 @@ class Command(BaseCommand):
                         workout_idx += 1
                         weeks_in = (current_date - start_date).days // 7
 
-                        # Progressive overload: +1.25kg per week
+                        # Progressive overload logic: increment weight by 1.25kg per week.
                         overload = weeks_in * Decimal("1.25")
 
                         workout = Workout.objects.create(
@@ -125,7 +132,7 @@ class Command(BaseCommand):
                             except Exercise.DoesNotExist:
                                 self.stdout.write(
                                     self.style.WARNING(
-                                        f"        Exercise '{ex_data['name']}' not found — run seed_exercises first"
+                                        f"        Exercise '{ex_data['name']}' not found"
                                     )
                                 )
                                 continue
@@ -163,6 +170,7 @@ class Command(BaseCommand):
                                 )
 
                                 if is_past and ex_record:
+                                    # Create specific completion records for sets in past workouts.
                                     WorkoutSetCompletionRecord.objects.create(
                                         exercise_completion_record=ex_record,
                                         workout_set=w_set,

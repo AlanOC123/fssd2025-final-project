@@ -23,6 +23,8 @@ User = get_user_model()
 
 
 class UserIdSerializer(serializers.ModelSerializer):
+    """Simple serializer to expose only the user's primary key."""
+
     class Meta:
         model = User
         fields = ["id"]
@@ -30,17 +32,26 @@ class UserIdSerializer(serializers.ModelSerializer):
 
 
 class TrainingGoalSerializer(LabelLookupSerializer):
+    """Serializer for TrainingGoal using label-based lookup logic."""
 
     class Meta(LabelLookupSerializer.Meta):
         model = TrainingGoal
 
 
 class ExperienceLevelSerializer(LabelLookupSerializer):
+    """Serializer for ExperienceLevel using label-based lookup logic."""
+
     class Meta(LabelLookupSerializer.Meta):
         model = ExperienceLevel
 
 
 class ClientProfileSerializer(ApexSerializer):
+    """Serializer for ClientProfile including goal and experience details.
+
+    Handles read-only nested representations for goals and levels while
+    allowing updates via primary key fields.
+    """
+
     goal = TrainingGoalSerializer(read_only=True)
     level = ExperienceLevelSerializer(read_only=True)
 
@@ -73,7 +84,11 @@ class ClientProfileSerializer(ApexSerializer):
 
 
 class TrainerProfileSerializer(ApexSerializer):
-    """Used for matching trainers with clients"""
+    """Serializer for TrainerProfile with support for many-to-many relationships.
+
+    Exposes accepted goals and levels as nested objects for reads and
+    primary key lists for writes.
+    """
 
     accepted_goals = TrainingGoalSerializer(many=True, read_only=True)
     accepted_levels = ExperienceLevelSerializer(many=True, read_only=True)
@@ -113,6 +128,11 @@ class TrainerProfileSerializer(ApexSerializer):
 
 
 class TrainerMatchingSerializer(ApexSerializer):
+    """Specialized serializer for matching clients with trainers.
+
+    Includes basic user identification and trainer-specific capabilities.
+    """
+
     first_name = serializers.CharField(source="user.first_name", read_only=True)
     last_name = serializers.CharField(source="user.last_name", read_only=True)
     email = serializers.CharField(source="user.email", read_only=True)
@@ -134,6 +154,12 @@ class TrainerMatchingSerializer(ApexSerializer):
 
 
 class CustomUserSerializer(ApexSerializer):
+    """Serializer for CustomUser providing derived profile and role data.
+
+    Calculates roles and dynamically fetches the appropriate profile
+    type based on user flags.
+    """
+
     profile = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
@@ -152,9 +178,15 @@ class CustomUserSerializer(ApexSerializer):
         ]
 
     def get_full_name(self, obj):
+        """Retrieves user's full name."""
         return obj.get_full_name()
 
     def get_role(self, obj):
+        """Determines user's role based on flags.
+
+        Returns:
+            str: One of 'admin', 'trainer', 'client', or 'unknown'.
+        """
         if obj.is_superuser:
             return "admin"
         if obj.is_trainer:
@@ -164,6 +196,11 @@ class CustomUserSerializer(ApexSerializer):
         return "unknown"
 
     def get_profile(self, obj):
+        """Returns serialized profile data based on user type.
+
+        Returns:
+            dict: Serialized profile data or None if no profile exists.
+        """
         if obj.is_client and hasattr(obj, "client_profile"):
             return ClientProfileSerializer(obj.client_profile).data
 
@@ -174,19 +211,15 @@ class CustomUserSerializer(ApexSerializer):
 
 
 class ApexPasswordResetSerializer(PasswordResetSerializer):
-    """
-    Bypasses reverse('password_reset_confirm') by finding the user directly
-    and sending a plain email with our frontend reset URL.
-    """
+    """Custom serializer to send password reset emails via frontend routes."""
 
     def save(self):
+        """Generates reset tokens and sends the email to the user."""
         email = self.data.get("email", "")
 
-        # Find active users with this email
         try:
             user = User.objects.get(email__iexact=email, is_active=True)
         except User.DoesNotExist:
-            # Don't reveal whether the email exists
             return
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -226,10 +259,9 @@ class ApexPasswordResetSerializer(PasswordResetSerializer):
 
 
 class ApexPasswordResetConfirmSerializer(serializers.Serializer):
-    """
-    Handles password reset confirm for UUID primary key users.
-    Django's default confirm serializer expects integer PKs — this one
-    decodes the base64 uid back to a UUID string.
+    """Handles verification and setting of new passwords using UUIDs.
+
+    Decodes the base64 UID and checks the token validity against the user.
     """
 
     uid = serializers.CharField()
@@ -238,6 +270,14 @@ class ApexPasswordResetConfirmSerializer(serializers.Serializer):
     new_password2 = serializers.CharField(max_length=128, write_only=True)
 
     def validate(self, attrs):
+        """Validates the reset token, UID, and password consistency.
+
+        Returns:
+            dict: Validated attributes.
+
+        Raises:
+            ValidationError: If token/UID is invalid or passwords mismatch.
+        """
         try:
             uid = force_str(urlsafe_base64_decode(attrs["uid"]))
             self.user = User.objects.get(pk=uid)
@@ -262,18 +302,25 @@ class ApexPasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
 
     def save(self):
+        """Applies the new password to the user."""
         self.user.set_password(self.validated_data["new_password1"])
         self.user.save()
         return self.user
 
 
 class CustomRegisterSerializer(RegisterSerializer):
+    """Registration serializer supporting custom roles and profile creation.
+
+    Directly assigns trainer/client flags and ensures profile existence.
+    """
+
     username = None
     first_name = serializers.CharField(required=True, max_length=150)
     last_name = serializers.CharField(required=True, max_length=150)
     role = serializers.ChoiceField(choices=["trainer", "client"], write_only=True)
 
     def get_cleaned_data(self):
+        """Prepares initial data, removing unnecessary username field."""
         data = super().get_cleaned_data()
         data.pop("username", None)
         data["first_name"] = self.validated_data.get("first_name", "")
@@ -281,24 +328,25 @@ class CustomRegisterSerializer(RegisterSerializer):
         return data
 
     def save(self, request):
-        # Call the parent save() which creates the user via allauth
+        """Saves the user and triggers manual profile generation.
+
+        Args:
+            request: The registration request object.
+
+        Returns:
+            CustomUser: The newly created user instance.
+        """
         user = super().save(request)
 
-        # Set role flags directly after creation — get_cleaned_data can't
-        # reliably pass is_trainer/is_client through allauth's save_user()
         role = self.validated_data.get("role", "")
         user.is_trainer = role == "trainer"
         user.is_client = role == "client"
 
-        # Use queryset update to bypass full_clean() and avoid the double-save
-        # unique constraint issue we already fixed in models.py
         User.objects.filter(pk=user.pk).update(
             is_trainer=user.is_trainer,
             is_client=user.is_client,
         )
 
-        # Manually trigger profile creation since the signal already fired
-        # before we set the role flags
         if user.is_trainer and not hasattr(user, "trainer_profile"):
             from apps.users.models import TrainerProfile
 
@@ -312,6 +360,8 @@ class CustomRegisterSerializer(RegisterSerializer):
 
 
 class TrainerClientMembershipSerializer(ApexSerializer):
+    """Serializer for tracking memberships between trainers and clients."""
+
     trainer_name = serializers.SerializerMethodField()
     client_name = serializers.SerializerMethodField()
 
@@ -356,22 +406,26 @@ class TrainerClientMembershipSerializer(ApexSerializer):
         ]
 
     def get_trainer_name(self, obj):
+        """Retrieves the full name or email of the trainer."""
         name = obj.trainer.user.get_full_name()
         return name if name else obj.trainer.user.email
 
     def get_client_name(self, obj):
+        """Retrieves the full name or email of the client."""
         name = obj.client.user.get_full_name()
         return name if name else obj.client.user.email
 
 
 class MembershipRequestSerializer(serializers.Serializer):
+    """Simplified serializer for initiating membership requests."""
+
     trainer_id = serializers.PrimaryKeyRelatedField(
         queryset=TrainerProfile.objects.all(),
     )
 
 
 class TrainerProfileWriteSerializer(ApexSerializer):
-    """Used by the trainer to update their own profile"""
+    """Serializer allowing trainers to manage their own profile details."""
 
     accepted_goal_ids = serializers.PrimaryKeyRelatedField(
         queryset=TrainingGoal.objects.all(),

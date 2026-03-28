@@ -75,9 +75,7 @@ INSTALLED_APPS = [
     "core",  # Apex Model
     "apps.analytics",  # Analytics App
     "apps.biology",  # Biology App
-    "apps.energy",  # Energy App
     "apps.exercises",  # Exercises App
-    "apps.notifications",  # Notifications App
     "apps.workouts",  # Workouts App
     "apps.users",  # Users App
     "apps.programs",  # Programs App

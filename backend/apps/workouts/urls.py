@@ -1,3 +1,10 @@
+"""URL routing configuration for the workouts application.
+
+This module defines the API endpoints for managing workout prescriptions,
+exercises, sets, and their respective completion records using the
+Django REST Framework DefaultRouter.
+"""
+
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
@@ -10,6 +17,7 @@ from apps.workouts.views import (
     WorkoutViewSet,
 )
 
+# Initialize the REST router and register viewsets for the workouts API.
 router = DefaultRouter()
 
 router.register(r"workouts", WorkoutViewSet, basename="workouts")

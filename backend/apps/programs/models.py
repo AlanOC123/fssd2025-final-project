@@ -17,46 +17,84 @@ User = get_user_model()
 
 
 class ProgramPhaseOption(NormalisedLookupModel):
-    """
-    Table to record the different types of phases.
-    Provides a consistent interface for trainer to program for clients
+    """Table to record the different types of phases.
+
+    Provides a consistent interface for trainers to program for clients.
+
+    Attributes:
+        default_duration_days: Default length of the phase in days.
     """
 
     default_duration_days = models.PositiveSmallIntegerField(default=28)
 
     @property
     def default_duration_weeks(self):
+        """Calculates the default duration in weeks, rounding up."""
         return math.ceil(self.default_duration_days / 7)
 
     class Meta:
+        """Metadata options for ProgramPhaseOption."""
+
         verbose_name_plural = "Program Phase Options"
 
     def clean(self) -> None:
+        """Validates that the default duration is positive.
+
+        Raises:
+            ValidationError: If default_duration_days is 0 or less.
+        """
         super().clean()
 
         if self.default_duration_days <= 0:
             raise ValidationError("Default durations must be greater than 0")
 
     def save(self, *args, **kwargs):
+        """Validates the model before saving."""
         self.full_clean()
         return super().save(*args, **kwargs)
 
 
 class ProgramStatusOption(NormalisedLookupModel):
+    """Lookup table for program-level status options."""
+
     class Meta:
+        """Metadata options for ProgramStatusOption."""
+
         verbose_name_plural = "Program Status Options"
 
 
 class ProgramPhaseStatusOption(NormalisedLookupModel):
+    """Lookup table for individual phase status options."""
+
     class Meta:
+        """Metadata options for ProgramPhaseStatusOption."""
+
         verbose_name_plural = "Program Phase Status Options"
 
 
 class Program(ApexModel):
-    """
-    Actual program that trainers will create for a client.
-    Consists of phases.
-    Must be related to an active client trainer membership.
+    """Actual program that trainers create for a client.
+
+    Consists of multiple phases and must be related to an active
+    client-trainer membership.
+
+    Attributes:
+        program_name: Name of the training program.
+        trainer_client_membership: Relationship to the client-trainer pair.
+        training_goal: Primary objective of the program.
+        experience_level: Intended difficulty level.
+        status: Current lifecycle state of the program.
+        created_by_trainer: User who initially created the program.
+        last_edited_by: Last user to modify the record.
+        version: Integer tracking the program iteration.
+        submitted_for_review_at: Timestamp of review submission.
+        reviewed_at: Timestamp of review completion.
+        started_at: Timestamp when the program officially began.
+        completed_at: Timestamp of successful completion.
+        abandoned_at: Timestamp if the program was stopped prematurely.
+        review_notes: Feedback from the review process.
+        completion_notes: Summary notes upon finishing.
+        abandonment_reason: Explanation for program abandonment.
     """
 
     program_name = models.CharField(max_length=150)
@@ -115,18 +153,22 @@ class Program(ApexModel):
 
     @property
     def program_duration_days(self):
+        """Total duration of all phases in days."""
         return sum(phase.duration_days for phase in self.phases.all())
 
     @property
     def program_duration_weeks(self):
+        """Total duration of all phases in weeks, rounded up."""
         return math.ceil(self.program_duration_days / 7)
 
     @property
     def has_created_phases(self):
+        """Checks if the program has any associated phases."""
         return self.phases.exists()
 
     @property
     def number_of_completed_phases(self):
+        """Counts how many phases are marked as COMPLETED."""
         return sum(
             phase.status.code == ProgramPhaseStatusesVocabulary.COMPLETED
             for phase in self.phases.all()
@@ -134,6 +176,7 @@ class Program(ApexModel):
 
     @property
     def number_of_skipped_phases(self):
+        """Counts how many phases are marked as SKIPPED."""
         return sum(
             phase.status.code == ProgramPhaseStatusesVocabulary.SKIPPED
             for phase in self.phases.all()
@@ -141,6 +184,7 @@ class Program(ApexModel):
 
     @property
     def number_of_archived_phases(self):
+        """Counts how many phases are marked as ARCHIVED."""
         return sum(
             phase.status.code == ProgramPhaseStatusesVocabulary.ARCHIVED
             for phase in self.phases.all()
@@ -148,6 +192,7 @@ class Program(ApexModel):
 
     @property
     def all_phases_finished(self):
+        """Checks if every phase is in a finished state."""
         return all(
             phase.status.code in ProgramPhaseStatusesVocabulary.FINISHED_STATES
             for phase in self.phases.all()
@@ -155,6 +200,7 @@ class Program(ApexModel):
 
     @property
     def remaining_phases(self):
+        """Returns a list of phases that are not yet finished."""
         return [
             phase
             for phase in self.phases.all()
@@ -163,25 +209,35 @@ class Program(ApexModel):
 
     @property
     def planned_start_date(self):
+        """Gets the planned start date of the first phase."""
         first_phase = self.phases.first()
         return first_phase.planned_start_date if first_phase else None
 
     @property
     def planned_end_date(self):
+        """Gets the planned end date of the last phase."""
         last_phase = self.phases.last()
         return last_phase.planned_end_date if last_phase else None
 
     @property
     def actual_start_date(self):
+        """Gets the recorded start date of the first chronological phase."""
         first_phase = self.phases.order_by("sequence_order").first()
         return first_phase.actual_start_date if first_phase else None
 
     @property
     def actual_end_date(self):
+        """Gets the recorded end date of the last chronological phase."""
         last_phase = self.phases.order_by("sequence_order").last()
         return last_phase.actual_end_date if last_phase else None
 
     def clean(self):
+        """Performs complex cross-field validation for the program lifecycle.
+
+        Raises:
+            ValidationError: If business rules for transitions, roles,
+                or timestamps are violated.
+        """
         super().clean()
 
         status_code = self.status.code
@@ -298,6 +354,7 @@ class Program(ApexModel):
             raise ValidationError("Abandoned programs cannot have completion notes.")
 
     def save(self, *args, **kwargs):
+        """Validates the model before saving."""
         self.full_clean()
         return super().save(*args, **kwargs)
 
@@ -310,9 +367,32 @@ class Program(ApexModel):
 
 
 class ProgramPhase(ApexModel):
-    """
-    Specific phase the program is currently in.
-    Links to the abstract Phase options table where meta data is located.
+    """Specific phase within a program lifecycle.
+
+    Links to the abstract ProgramPhaseOption for metadata and tracks
+    individual execution dates and statuses.
+
+    Attributes:
+        phase_option: Reference to the template/type of phase.
+        phase_name: User-defined name for this specific phase.
+        phase_goal: Stated objective for the phase.
+        program: Parent training program.
+        sequence_order: Positioning of the phase within the program.
+        status: Lifecycle state of this specific phase.
+        trainer_notes: Internal notes for the trainer.
+        client_notes: Notes visible or relevant to the client.
+        planned_start_date: Projected start.
+        planned_end_date: Projected end.
+        actual_start_date: Recorded day the phase started.
+        actual_end_date: Recorded day the phase ended.
+        started_at: High-precision timestamp of start.
+        completed_at: High-precision timestamp of completion.
+        created_by_trainer: User who created the phase.
+        last_edited_by: User who last modified the phase.
+        skipped_at: Timestamp if skipped.
+        skipped_reason: Reason for skipping.
+        archived_at: Timestamp if archived.
+        archived_reason: Reason for archiving.
     """
 
     phase_option = models.ForeignKey(
@@ -374,13 +454,17 @@ class ProgramPhase(ApexModel):
 
     @property
     def duration_days(self):
+        """Calculates duration based on planned dates."""
         return (self.planned_end_date - self.planned_start_date).days
 
     @property
     def duration_weeks(self):
+        """Calculates duration in weeks, rounding up."""
         return math.ceil(self.duration_days / 7)
 
     class Meta:
+        """Metadata options for ProgramPhase."""
+
         ordering = ["sequence_order"]
         constraints = [
             models.UniqueConstraint(
@@ -390,6 +474,12 @@ class ProgramPhase(ApexModel):
         ]
 
     def clean(self):
+        """Validates phase lifecycle and state-dependent timestamps.
+
+        Raises:
+            ValidationError: If sequence, dates, or status-specific
+                requirements are not met.
+        """
         super().clean()
 
         status_code = self.status.code
@@ -493,6 +583,7 @@ class ProgramPhase(ApexModel):
             raise ValidationError("Program phases can only be created by trainers.")
 
     def save(self, *args, **kwargs):
+        """Validates the model before saving."""
         self.full_clean()
         return super().save(*args, **kwargs)
 

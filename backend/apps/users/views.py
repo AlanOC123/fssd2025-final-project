@@ -29,10 +29,16 @@ from .serializers import (
 from .services.membership import MembershipService
 
 
-# Protected Viewsets
 class TrainerClientMembershipViewSet(
     mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
 ):
+    """ViewSet for managing memberships between trainers and clients.
+
+    This ViewSet handles the lifecycle of a membership, including requests,
+    acceptance, rejection, and dissolution. It filters data based on the
+    authenticated user's role.
+    """
+
     serializer_class = TrainerClientMembershipSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -40,25 +46,40 @@ class TrainerClientMembershipViewSet(
     filterset_class = TrainerClientMembershipFilter
 
     def get_queryset(self):
+        """Filters the membership queryset based on user role.
 
+        Trainers see memberships where they are the provider; clients see
+        memberships where they are the recipient.
+
+        Returns:
+            QuerySet: A filtered queryset of TrainerClientMembership objects.
+        """
         queryset = TrainerClientMembership.objects.select_related(
             "trainer__user", "client__user", "status", "previous_membership"
         )
-        # Get the user from the request
         user = self.request.user
 
-        # The user is a trainer
         if user.is_trainer:
             return queryset.filter(trainer=user.trainer_profile)
 
-        # The user is a client
         if user.is_client:
             return queryset.filter(client=user.client_profile)
 
-        # The user is unknown
         return queryset.none()
 
     def _handle_client_membership_action(self, request, service_action):
+        """Helper to handle membership actions initiated by a client.
+
+        Args:
+            request: The current HTTP request.
+            service_action: The service method to execute (e.g., request or renew).
+
+        Returns:
+            Response: A DRF Response containing serialized membership data.
+
+        Raises:
+            PermissionDenied: If the user is not a client.
+        """
         client_user = request.user
 
         if not client_user.is_client:
@@ -68,7 +89,6 @@ class TrainerClientMembershipViewSet(
         action_serializer.is_valid(raise_exception=True)
 
         trainer = action_serializer.validated_data["trainer_id"]
-
         membership = service_action(client_user=client_user, trainer_user=trainer.user)
 
         output = self.get_serializer(membership)
@@ -77,6 +97,19 @@ class TrainerClientMembershipViewSet(
     def _handle_trainer_membership_action(
         self, request, service_action, action_message
     ):
+        """Helper to handle membership responses initiated by a trainer.
+
+        Args:
+            request: The current HTTP request.
+            service_action: The service method to execute (e.g., accept or reject).
+            action_message: A string describing the action for error messages.
+
+        Returns:
+            Response: A DRF Response containing serialized membership data.
+
+        Raises:
+            PermissionDenied: If the user is not a trainer.
+        """
         membership = self.get_object()
         trainer_user = request.user
 
@@ -92,12 +125,14 @@ class TrainerClientMembershipViewSet(
 
     @action(detail=False, methods=["post"], url_path="request")
     def request_membership(self, request):
+        """Endpoint for clients to request a new membership with a trainer."""
         return self._handle_client_membership_action(
             request=request, service_action=MembershipService.request
         )
 
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
+        """Endpoint for trainers to accept a pending membership request."""
         return self._handle_trainer_membership_action(
             request=request,
             service_action=MembershipService.accept,
@@ -106,6 +141,7 @@ class TrainerClientMembershipViewSet(
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
+        """Endpoint for trainers to reject a pending membership request."""
         return self._handle_trainer_membership_action(
             request=request,
             service_action=MembershipService.reject,
@@ -114,6 +150,7 @@ class TrainerClientMembershipViewSet(
 
     @action(detail=True, methods=["post"])
     def dissolve(self, request, pk=None):
+        """Endpoint to dissolve an existing membership agreement."""
         membership = self.get_object()
         membership = MembershipService.dissolve(
             membership=membership, acting_user=request.user
@@ -124,12 +161,19 @@ class TrainerClientMembershipViewSet(
 
     @action(detail=False, methods=["post"], url_path="renew")
     def renew_membership(self, request):
+        """Endpoint for clients to renew an existing or previous membership."""
         return self._handle_client_membership_action(
             request=request, service_action=MembershipService.renew
         )
 
 
 class TrainerMatchingViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for clients to find compatible trainers.
+
+    Filters trainers based on whether they accept the client's current
+    goal and experience level, excluding those with existing active memberships.
+    """
+
     serializer_class = TrainerMatchingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -137,17 +181,18 @@ class TrainerMatchingViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ["user__email", "company", "website"]
 
     def get_queryset(self):
-        # Trainers cant search for other trainers
-        user = self.request.user
+        """Filters available trainers based on client compatibility.
 
-        if user.is_trainer:
-            return TrainerProfile.objects.none()
+        Returns:
+            QuerySet: Trainers matching the client's profile, excluding
+                existing memberships.
+        """
+        user = self.request.user
 
         if not user.is_client:
             return TrainerProfile.objects.none()
 
         profile = user.client_profile
-
         queryset = TrainerProfile.objects.select_related("user").prefetch_related(
             "accepted_goals",
             "accepted_levels",
@@ -172,15 +217,23 @@ class TrainerMatchingViewSet(viewsets.ReadOnlyModelViewSet):
 class TrainerProfileViewSet(
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet
 ):
+    """ViewSet for trainers to manage their own professional profile."""
+
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ["get", "patch", "head", "options"]
 
     def get_queryset(self):
+        """Standard queryset for trainer profiles."""
         return TrainerProfile.objects.select_related("user").prefetch_related(
             "accepted_goals", "accepted_levels"
         )
 
     def get_object(self):
+        """Returns the trainer profile for the authenticated user.
+
+        Raises:
+            PermissionDenied: If the user is not a trainer.
+        """
         user = self.request.user
 
         if not user.is_trainer:
@@ -189,16 +242,20 @@ class TrainerProfileViewSet(
         return get_object_or_404(TrainerProfile, user=user)
 
     def get_serializer_class(self):
+        """Switches between read and write serializers based on the action."""
         if self.action in ("update", "partial_update", "me_update"):
             return TrainerProfileWriteSerializer
         return TrainerProfileSerializer
 
     def partial_update(self, request, *args, **kwargs):
+        """Handles partial updates of the trainer profile.
+
+        Explicitly manages many-to-many field updates (goals and levels).
+        """
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        # Handle M2M fields explicitly
         if "accepted_goals" in serializer.validated_data:
             instance.accepted_goals.set(serializer.validated_data.pop("accepted_goals"))
         if "accepted_levels" in serializer.validated_data:
@@ -215,27 +272,15 @@ class TrainerProfileViewSet(
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
+        """Returns the authenticated trainer's own profile."""
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
     @action(detail=False, methods=["patch"], url_path="me/update")
     def me_update(self, request):
-        instance = self.get_object()
-
-        if "accepted_goals" in serializer.validated_data:
-            instance.accepted_goals.set(serializer.validated_data.pop("accepted_goals"))
-        if "accepted_levels" in serializer.validated_data:
-            instance.accepted_levels.set(
-                serializer.validated_data.pop("accepted_levels")
-            )
-
-        for attr, value in serializer.validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        output = self.get_serializer(instance)
-        return Response(output.data)
+        """Updates the authenticated trainer's own profile."""
+        return self.partial_update(request)
 
 
 class ClientProfileViewSet(
@@ -243,9 +288,10 @@ class ClientProfileViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    """
-    Allows a client to read and update their own profile.
-    Handles avatar upload (multipart) and goal/level selection.
+    """Allows a client to read and update their own profile.
+
+    Supports avatar upload via MultiPartParser and profile selection for
+    goals and levels.
     """
 
     permission_classes = [permissions.IsAuthenticated]
@@ -258,6 +304,11 @@ class ClientProfileViewSet(
     ]
 
     def get_object(self):
+        """Returns the client profile for the authenticated user.
+
+        Raises:
+            PermissionDenied: If the user is not a client.
+        """
         user = self.request.user
         if not user.is_client:
             raise PermissionDenied("Only clients can access this endpoint.")
@@ -265,11 +316,13 @@ class ClientProfileViewSet(
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
+        """Returns the authenticated client's own profile."""
         instance = self.get_object()
         return Response(self.get_serializer(instance).data)
 
     @action(detail=False, methods=["patch"], url_path="me/update")
     def me_update(self, request):
+        """Updates the authenticated client's own profile."""
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -277,12 +330,15 @@ class ClientProfileViewSet(
         return Response(self.get_serializer(instance).data)
 
 
-# Public Viewsets
 class TrainingGoalViewSet(NormalisedLookupViewSet):
+    """Public ViewSet for viewing available training goals."""
+
     serializer_class = TrainingGoalSerializer
     queryset = TrainingGoal.objects.all()
 
 
 class ExperienceLevelViewSet(NormalisedLookupViewSet):
+    """Public ViewSet for viewing available experience levels."""
+
     serializer_class = ExperienceLevelSerializer
     queryset = ExperienceLevel.objects.all()

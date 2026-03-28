@@ -1,6 +1,8 @@
 from decimal import Decimal
 from math import e
 
+# Mapping of repetitions to the estimated percentage of one-rep max.
+# Used for standardizing load distribution across different rep ranges.
 LOAD_CHART = {
     1: Decimal("1.00"),
     2: Decimal("0.95"),
@@ -26,6 +28,15 @@ LOAD_CHART = {
 
 
 def epley_one_rep_max(weight, reps):
+    """Calculates the estimated 1RM using the Epley formula.
+
+    Args:
+        weight: The weight lifted (Decimal).
+        reps: The number of repetitions performed (int).
+
+    Returns:
+        Decimal: The estimated one-rep max.
+    """
     if reps <= 1:
         return weight
 
@@ -33,6 +44,15 @@ def epley_one_rep_max(weight, reps):
 
 
 def brzycki_one_rep_max(weight, reps):
+    """Calculates the estimated 1RM using the Brzycki formula.
+
+    Args:
+        weight: The weight lifted (Decimal).
+        reps: The number of repetitions performed (int).
+
+    Returns:
+        Decimal: The estimated one-rep max.
+    """
     if reps <= 1:
         return weight
 
@@ -40,6 +60,15 @@ def brzycki_one_rep_max(weight, reps):
 
 
 def lander_one_rep_max(weight, reps):
+    """Calculates the estimated 1RM using the McGlothin (Lander) formula.
+
+    Args:
+        weight: The weight lifted (Decimal).
+        reps: The number of repetitions performed (int).
+
+    Returns:
+        Decimal: The estimated one-rep max.
+    """
     if reps <= 1:
         return weight
 
@@ -49,6 +78,15 @@ def lander_one_rep_max(weight, reps):
 
 
 def lombardi_one_rep_max(weight, reps):
+    """Calculates the estimated 1RM using the Lombardi formula.
+
+    Args:
+        weight: The weight lifted (Decimal).
+        reps: The number of repetitions performed (int).
+
+    Returns:
+        Decimal: The estimated one-rep max.
+    """
     if reps <= 1:
         return weight
 
@@ -56,6 +94,15 @@ def lombardi_one_rep_max(weight, reps):
 
 
 def mayhew_one_rep_max(weight, reps):
+    """Calculates the estimated 1RM using the Mayhew et al. formula.
+
+    Args:
+        weight: The weight lifted (Decimal).
+        reps: The number of repetitions performed (int).
+
+    Returns:
+        Decimal: The estimated one-rep max.
+    """
     if reps <= 1:
         return weight
     return (Decimal(100) * weight) / (
@@ -64,6 +111,15 @@ def mayhew_one_rep_max(weight, reps):
 
 
 def o_conner_one_rep_max(weight, reps):
+    """Calculates the estimated 1RM using the O'Conner et al. formula.
+
+    Args:
+        weight: The weight lifted (Decimal).
+        reps: The number of repetitions performed (int).
+
+    Returns:
+        Decimal: The estimated one-rep max.
+    """
     if reps <= 1:
         return weight
 
@@ -71,6 +127,15 @@ def o_conner_one_rep_max(weight, reps):
 
 
 def wathan_one_rep_max(weight, reps):
+    """Calculates the estimated 1RM using the Wathan formula.
+
+    Args:
+        weight: The weight lifted (Decimal).
+        reps: The number of repetitions performed (int).
+
+    Returns:
+        Decimal: The estimated one-rep max.
+    """
     if reps <= 1:
         return weight
     return (Decimal(100) * weight) / (
@@ -79,7 +144,19 @@ def wathan_one_rep_max(weight, reps):
 
 
 def weight_at_reps(one_rep_max, reps):
+    """Calculates the predicted weight for a given number of repetitions.
 
+    Uses the LOAD_CHART to find the percentage of 1RM corresponding to the
+    target reps. If the exact rep count is not in the chart, it uses the
+    nearest available value.
+
+    Args:
+        one_rep_max: The estimated 1RM of the user (Decimal).
+        reps: The target number of repetitions (int).
+
+    Returns:
+        Decimal: The estimated weight to be used for the given reps.
+    """
     if reps in LOAD_CHART:
         return one_rep_max * LOAD_CHART[reps]
 

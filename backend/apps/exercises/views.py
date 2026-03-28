@@ -15,14 +15,32 @@ from .serializers import (
 
 
 class EquipmentViewSet(NormalisedLookupViewSet):
+    """ViewSet for viewing and interacting with Equipment reference data.
+
+    Inherits from NormalisedLookupViewSet to provide standard lookup functionality.
+    """
+
     serializer_class = EquipmentSerializer
     queryset = Equipment.objects.all()
 
 
 class ExerciseViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Public Reference Data: Exercise
-    Used to select exercises to build workouts.
+    """ViewSet for public reference data of Exercises.
+
+    This ViewSet is primarily used to browse and select exercises for workout
+    construction. It supports filtering, searching, and ordering by exercise name.
+
+    Attributes:
+        permission_classes: Set to AllowAny for public read access.
+        serializer_class: Uses ExerciseSerializer for detailed output.
+        queryset: Optimized QuerySet using select_related and prefetch_related
+             to reduce database hits for experience levels and equipment.
+        filter_backends: Supports DjangoFilterBackend, SearchFilter, and
+            OrderingFilter.
+        filterset_class: Linked to ExerciseFilter for complex muscle-based filtering.
+        search_fields: Enables searching on the 'exercise_name' field.
+        ordering_fields: Allows ordering by 'exercise_name'.
+        ordering: Default sort order is alphabetical by 'exercise_name'.
     """
 
     permission_classes = [permissions.AllowAny]

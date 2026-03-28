@@ -7,13 +7,19 @@ import axios, {
 
 import { normaliseError, type ApiError } from '@/shared/utils/errors'
 
-// Types
 export type { ApiError }
+
+/**
+ * Extension of InternalAxiosRequestConfig to track retry attempts.
+ */
 interface RetryableRequest extends InternalAxiosRequestConfig {
+    /** Indicates if the request has already been retried following a 401. */
     _retry?: boolean
 }
 
-// Base Axios Client
+/**
+ * Base Axios instance configured for the application API.
+ */
 const client: AxiosInstance = axios.create({
     baseURL: '/api/v1',
     withCredentials: true,
@@ -23,8 +29,11 @@ const client: AxiosInstance = axios.create({
     },
 })
 
-// Request interceptor — remove Content-Type for FormData so Axios sets it
-// automatically with the correct multipart boundary
+/**
+ * Request interceptor to handle multipart/form-data.
+ * * Removes the manual Content-Type header when sending FormData to allow
+ * the browser/Axios to automatically set the boundary string.
+ */
 client.interceptors.request.use((config) => {
     if (config.data instanceof FormData) {
         delete config.headers['Content-Type']
@@ -32,22 +41,37 @@ client.interceptors.request.use((config) => {
     return config
 })
 
-// Response flags
 let isRefreshing = false
 let refreshQueue: Array<(value: unknown) => void> = []
 
-// Async queue of errors on resolve
+/**
+ * Resolves or rejects all pending promises in the refresh queue.
+ *
+ * Args:
+ * error: Optional error to pass to the resolvers if the refresh failed.
+ */
 const drainQueue = (error?: unknown) => {
     refreshQueue.forEach((resolve) => resolve(error))
     refreshQueue = []
 }
 
+/**
+ * Response interceptor for handling global error states and token refreshing.
+ *
+ * Implements a thread-safe-like queue for 401 Unauthorized responses. When a
+ * session expires, it attempts to refresh the token and retries all
+ * failed requests once the new token is obtained.
+ *
+ * Returns:
+ * The successful response or a retried request promise.
+ *
+ * Throws:
+ * ApiError: Normalised error object if the request fails or refresh is invalid.
+ */
 client.interceptors.response.use(
     (response: AxiosResponse) => response,
 
-    // Retry handler
     async (error) => {
-        // Unpack response
         const original: RetryableRequest = error.config
         const is401 = error.response?.status === 401
         const isRefreshEndpoint = original.url?.includes('/auth/token/refresh/')
@@ -57,47 +81,45 @@ client.interceptors.response.use(
             original?.url?.includes('/auth/registration/')
         const alreadyRetried = original._retry
 
-        // If it wasnt a 401, is a refresh endpoint and we've already tried, reject.
+        // Guard clause to prevent retry loops on auth endpoints or repeated failures.
         if (!is401 || isRefreshEndpoint || alreadyRetried || isAuthEndpoint) {
             return Promise.reject(normaliseError(error))
         }
 
-        // If Add the reponse resolve fn to the refresh queue to resolve later.
+        // If a refresh is already in progress, queue this request.
         if (isRefreshing) {
             return new Promise((resolve) => {
                 refreshQueue.push(resolve)
             }).then(() => client(original))
         }
 
-        // Set response flags
         original._retry = true
         isRefreshing = true
 
-        // Refresh logic
         try {
-            // Get a new token using existing refresh token
             await client.post('/auth/token/refresh/')
-
-            // Resolve the responses in the queue if successful
             drainQueue()
-
-            // Return the original response
             return client(original)
         } catch (refreshError) {
-            // No refresh token, add the refresh error to the queue
             drainQueue(refreshError)
-
-            // Reject
             return Promise.reject(normaliseError(refreshError))
         } finally {
-            // Important, set isRefreshing false to prevent infinte loops.
             isRefreshing = false
         }
     },
 )
 
-// API Helpers
+/**
+ * Higher-level API utility for type-safe HTTP requests.
+ */
 export const api = {
+    /**
+     * Args:
+     * url: Request destination.
+     * config: Optional Axios configuration.
+     * Returns:
+     * The parsed data of type T.
+     */
     get: <T>(url: string, config?: AxiosRequestConfig): Promise<T> =>
         client.get<T>(url, config).then((r) => r.data),
 

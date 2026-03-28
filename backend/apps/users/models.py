@@ -14,6 +14,13 @@ from core.models import ApexModel, NormalisedLookupModel
 
 
 class TrainingGoal(NormalisedLookupModel):
+    """Model representing a training objective with associated rep ranges.
+
+    Attributes:
+        rep_range_min: Minimum number of repetitions for the goal.
+        rep_range_max: Maximum number of repetitions for the goal.
+    """
+
     rep_range_min = models.PositiveSmallIntegerField(null=True, blank=True)
     rep_range_max = models.PositiveSmallIntegerField(null=True, blank=True)
 
@@ -21,6 +28,12 @@ class TrainingGoal(NormalisedLookupModel):
         verbose_name_plural = "Training Goals"
 
     def clean(self):
+        """Validates that rep ranges are logically consistent.
+
+        Raises:
+            ValidationError: If only one rep range boundary is set, or if min
+                exceeds max.
+        """
         super().clean()
 
         if (self.rep_range_min is None) != (self.rep_range_max is None):
@@ -39,6 +52,12 @@ class TrainingGoal(NormalisedLookupModel):
 
 
 class ExperienceLevel(NormalisedLookupModel):
+    """Model representing the training experience level of a user.
+
+    Attributes:
+        progression_cap_percent: A decimal representing a cap on progression logic.
+    """
+
     progression_cap_percent = models.DecimalField(
         max_digits=4,
         decimal_places=2,
@@ -50,6 +69,11 @@ class ExperienceLevel(NormalisedLookupModel):
         verbose_name_plural = "Experience Levels"
 
     def clean(self):
+        """Validates that the progression cap is within the 0.00 to 1.00 range.
+
+        Raises:
+            ValidationError: If progression_cap_percent is outside allowed bounds.
+        """
         super().clean()
 
         if self.progression_cap_percent is None:
@@ -66,25 +90,33 @@ class ExperienceLevel(NormalisedLookupModel):
 
 
 class MembershipStatus(NormalisedLookupModel):
+    """Model representing the status of a trainer-client relationship."""
+
     class Meta:
         verbose_name_plural = "Membership Statuses"
 
 
 class CustomUserManager(BaseUserManager):
-    """
-    Custom manager where email is the unique identifier
-    for authentication instead of username
-    """
+    """Custom manager for CustomUser where email is the unique identifier."""
 
     def create_user(self, email, password=None, **extra_fields):
-        # Break early without email
+        """Creates and saves a User with the given email and password.
+
+        Args:
+            email: User's email address.
+            password: User's password.
+            **extra_fields: Additional fields for the user model.
+
+        Returns:
+            CustomUser: The created user instance.
+
+        Raises:
+            ValueError: If the email field is not provided.
+        """
         if not email:
             raise ValueError("The email field must be included")
 
-        # Lowercase email domain
         email = self.normalize_email(email)
-
-        # Create the model using the existing db connection
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -92,12 +124,23 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        # Base Superuser permissions
+        """Creates and saves a superuser with the given email and password.
+
+        Args:
+            email: User's email address.
+            password: User's password.
+            **extra_fields: Additional fields for the user model.
+
+        Returns:
+            CustomUser: The created superuser instance.
+
+        Raises:
+            ValueError: If staff or superuser flags are not set to True.
+        """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_active", True)
 
-        # Check if something went wrong
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True")
 
@@ -108,39 +151,46 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(ApexModel, AbstractBaseUser, PermissionsMixin):
-    """
-    Overrides base User model. Role Flags to determine trainer or client.
-    Uses email as authentication instead of username.
-    Defines UserManager as defined Custom Manager to override username authentication.
+    """Custom user model using email for authentication.
+
+    Attributes:
+        email: Unique identifier for the user.
+        first_name: User's first name.
+        last_name: User's last name.
+        is_trainer: Flag indicating if the user is a trainer.
+        is_client: Flag indicating if the user is a client.
+        is_staff: Flag for administrative access.
+        is_active: Flag for account activity.
     """
 
-    # Base User fields
     email = models.EmailField(get_text_value("email_address"), unique=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
 
-    # Role flags
     is_trainer = models.BooleanField(default=False)
     is_client = models.BooleanField(default=False)
 
-    # Standard Admin fields
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
 
-    # Defines what user.objects is, set it to our custom user manager
     objects = CustomUserManager()
 
-    # Deprecate the username field to use email
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
     def clean(self):
+        """Validates that a user does not possess conflicting roles.
+
+        Raises:
+            ValidationError: If the user is marked as both a trainer and a client.
+        """
         if self.is_trainer and self.is_client:
             raise ValidationError("A User cannot be both a trainer and a client")
 
         return super().clean()
 
     def save(self, *args, **kwargs):
+        """Performs full validation before saving the user instance."""
         exclude = []
         if self.pk:
             exclude.append("email")
@@ -148,6 +198,11 @@ class CustomUser(ApexModel, AbstractBaseUser, PermissionsMixin):
         super().save(*args, **kwargs)
 
     def get_full_name(self):
+        """Returns the user's first and last name combined.
+
+        Returns:
+            str: The full name of the user.
+        """
         return f"{self.first_name} {self.last_name}".strip()
 
     def __str__(self) -> str:
@@ -155,9 +210,15 @@ class CustomUser(ApexModel, AbstractBaseUser, PermissionsMixin):
 
 
 class TrainerProfile(ApexModel):
-    """
-    Profile for a trainer user. Created on new user save with
-    is_trainer role flag True
+    """Profile model for trainers.
+
+    Attributes:
+        user: One-to-one relationship with CustomUser.
+        accepted_goals: Goals the trainer is willing to work with.
+        accepted_levels: Experience levels the trainer accommodates.
+        company: Trainer's company name.
+        website: Trainer's professional website.
+        logo: Trainer's company logo.
     """
 
     user = models.OneToOneField(
@@ -174,12 +235,8 @@ class TrainerProfile(ApexModel):
         to=ExperienceLevel, related_name="trainers", blank=True
     )
 
-    # Required Trainer information (Company and Location)
     company = models.CharField(max_length=150, blank=True)
-
-    # Optional trainer information (Website and Logo)
     website = models.URLField(max_length=150, blank=True)
-
     logo = models.ImageField(upload_to="trainer_company_logos/", blank=True)
 
     def __str__(self) -> str:
@@ -187,9 +244,13 @@ class TrainerProfile(ApexModel):
 
 
 class ClientProfile(ApexModel):
-    """
-    Profile for a client user. Created on new user save with
-    is_client role flag True
+    """Profile model for clients.
+
+    Attributes:
+        user: One-to-one relationship with CustomUser.
+        goal: The client's current training goal.
+        level: The client's current experience level.
+        avatar: Client's profile picture.
     """
 
     user = models.OneToOneField(
@@ -198,7 +259,6 @@ class ClientProfile(ApexModel):
         related_name="client_profile",
     )
 
-    # Client data to match trainers and clients
     goal = models.ForeignKey(
         to=TrainingGoal,
         related_name="clients",
@@ -215,22 +275,28 @@ class ClientProfile(ApexModel):
         on_delete=models.SET_NULL,
     )
 
-    avatar = models.ImageField(
-        upload_to="client_avatars/",
-        blank=True
-    )
+    avatar = models.ImageField(upload_to="client_avatars/", blank=True)
 
     def __str__(self):
         return f"Client: {self.user.email}"
 
 
 class TrainerClientMembership(ApexModel):
-    """
-    Tracks active membership agreements with trainers and clients
-    Used for tracking programs and establishing the core hierarchy
+    """Tracks agreements and status between trainers and clients.
+
+    Attributes:
+        trainer: The trainer involved in the membership.
+        client: The client involved in the membership.
+        status: The current status of the membership.
+        requested_at: Timestamp of the initial request.
+        responded_at: Timestamp of when the request was accepted/rejected.
+        started_at: Timestamp of when the active phase began.
+        ended_at: Timestamp of when the membership was terminated.
+        ended_by: User who terminated the membership.
+        previous_membership: Reference to a previous renewal instance.
+        is_active: Boolean flag derived from status.
     """
 
-    # Core Data
     trainer = models.ForeignKey(
         to=TrainerProfile, on_delete=models.CASCADE, related_name="client_memberships"
     )
@@ -245,13 +311,11 @@ class TrainerClientMembership(ApexModel):
         related_name="memberships",
     )
 
-    # Initiation Metadata
     requested_at = models.DateTimeField(auto_now_add=True)
     responded_at = models.DateTimeField(null=True, blank=True)
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
 
-    # Archive Metadata
     ended_by = models.ForeignKey(
         to=CustomUser,
         on_delete=models.SET_NULL,
@@ -272,8 +336,6 @@ class TrainerClientMembership(ApexModel):
 
     class Meta:
         ordering = ["-updated_at"]
-
-        # Ensures unique check of clients and trainers
         constraints = [
             models.UniqueConstraint(
                 fields=["client", "trainer"],
@@ -283,6 +345,12 @@ class TrainerClientMembership(ApexModel):
         ]
 
     def clean(self) -> None:
+        """Validates membership integrity and state transition timestamps.
+
+        Raises:
+            ValidationError: If profile roles are incorrect, timestamps are
+                missing for relevant statuses, or the ending actor is unrelated.
+        """
         if not self.trainer.user.is_trainer:
             raise ValidationError("Membership trainers must belong to a trainer user.")
 
@@ -315,10 +383,10 @@ class TrainerClientMembership(ApexModel):
         return super().clean()
 
     def save(self, *args, **kwargs):
+        """Sets active flag based on status and performs full validation."""
         self.is_active = self.status and self.status.code == MembershipVocabulary.ACTIVE
         self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        return f"Trainer: {self.trainer.user.email}.\
-            Client: {self.client.user.email}. Status: {self.status.code}"
+        return f"Trainer: {self.trainer.user.email}. Client: {self.client.user.email}. Status: {self.status.code}"

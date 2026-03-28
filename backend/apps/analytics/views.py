@@ -15,6 +15,20 @@ from apps.programs.models import Program
 
 
 def _get_program_for_trainer(program_id, trainer_user):
+    """Retrieves a program and validates trainer ownership.
+
+    Args:
+        program_id: The UUID of the program to retrieve.
+        trainer_user: The user instance of the trainer making the request.
+
+    Returns:
+        Program: The program instance if found and authorized.
+
+    Raises:
+        NotFound: If the program does not exist or is not linked to a membership.
+        PermissionDenied: If the requesting trainer is not the one assigned to
+            the program's membership.
+    """
     try:
         program = Program.objects.select_related(
             "trainer_client_membership__trainer__user",
@@ -35,23 +49,35 @@ def _get_program_for_trainer(program_id, trainer_user):
 
 
 class ExerciseLoadHistoryView(generics.GenericAPIView):
-    """
-    Returns the stored load history for a specific exercise within a program.
+    """API view to retrieve the historical load progression for an exercise.
 
-    Reads from ExerciseSessionSnapshot — fast, pre-computed, ordered
-    chronologically. Each entry also computes the muscle-level breakdown
-    on the fly since that depends on the exercise's joint/muscle data
-    which is static reference data.
+    This view reads from pre-computed ExerciseSessionSnapshot records for speed.
+    It performs on-the-fly muscle-level load breakdown calculations because
+    joint/muscle mapping is considered static reference data.
 
-    Query params:
-    - muscle_group (optional): filter breakdown to a specific muscle group label
-    - role (optional): filter breakdown by muscle role code (AGONIST, SYNERGIST etc.)
+    Query parameters:
+        muscle_group (optional): Filter the breakdown to a specific muscle group.
+        role (optional): Filter the breakdown by muscle role (e.g., AGONIST).
     """
 
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ExerciseSnapshotSerializer
 
     def get(self, request, program_id, exercise_id):
+        """Handles GET requests for exercise load history.
+
+        Args:
+            request: The current HTTP request.
+            program_id: The UUID of the program.
+            exercise_id: The UUID of the exercise.
+
+        Returns:
+            Response: A list of serialized snapshots with muscle breakdown data.
+
+        Raises:
+            PermissionDenied: If the user is not a trainer.
+            NotFound: If the program or exercise is not found.
+        """
         if not request.user.is_trainer:
             raise PermissionDenied("Only trainers can access analytics.")
 
@@ -81,7 +107,7 @@ class ExerciseLoadHistoryView(generics.GenericAPIView):
                 status=status.HTTP_204_NO_CONTENT,
             )
 
-        # Build joint contributions once — same for every session
+        # Pre-build joint contributions for the exercise to avoid redundant loops.
         joint_contributions = [
             jc
             for movement in exercise.exercise_movements.all()
@@ -93,11 +119,13 @@ class ExerciseLoadHistoryView(generics.GenericAPIView):
 
         results = []
         for snapshot in snapshots:
+            # Calculate how the session load distributed across joints and muscles.
             joint_loads = calculate_joint_load(
                 snapshot.session_load, joint_contributions
             )
             muscle_loads = calculate_muscle_load(joint_loads)
 
+            # Apply filters if provided via query parameters.
             if muscle_group_filter:
                 muscle_loads = [
                     m
@@ -110,6 +138,7 @@ class ExerciseLoadHistoryView(generics.GenericAPIView):
                     m for m in muscle_loads if m["role"] == role_filter.upper()
                 ]
 
+            # Serialize snapshot and attach the calculated breakdown.
             entry = ExerciseSnapshotSerializer(snapshot).data
             entry["muscle_breakdown"] = [
                 {
@@ -131,18 +160,31 @@ class ExerciseLoadHistoryView(generics.GenericAPIView):
 
 
 class NextSessionRecommendationView(generics.GenericAPIView):
-    """
-    Returns the next session recommendation for a specific exercise
-    derived from the most recent stored snapshot.
+    """API view to retrieve recommendations for the next exercise session.
 
-    The snapshot already contains 1RM, target load, and weight band so
-    this is a simple lookup — no recalculation needed.
+    This view identifies the most recent performance snapshot and extracts
+    computed targets (1RM, target load, and weight bands) to guide the
+    trainer's programming for the next session.
     """
 
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = NextSessionRecommendationSerializer
 
     def get(self, request, program_id, exercise_id):
+        """Handles GET requests for next session recommendations.
+
+        Args:
+            request: The current HTTP request.
+            program_id: The UUID of the program.
+            exercise_id: The UUID of the exercise.
+
+        Returns:
+            Response: A serialized recommendation based on the latest performance.
+
+        Raises:
+            PermissionDenied: If the user is not a trainer.
+            NotFound: If the program or exercise is not found.
+        """
         if not request.user.is_trainer:
             raise PermissionDenied("Only trainers can access analytics.")
 
@@ -153,6 +195,7 @@ class NextSessionRecommendationView(generics.GenericAPIView):
         except Exercise.DoesNotExist:
             raise NotFound("Exercise not found.")
 
+        # Find the latest completed session snapshot for this exercise.
         latest_snapshot = (
             ExerciseSessionSnapshot.objects.filter(program=program, exercise=exercise)
             .select_related("session")
@@ -169,6 +212,7 @@ class NextSessionRecommendationView(generics.GenericAPIView):
         training_goal = program.training_goal
         experience_level = program.experience_level
 
+        # Package the snapshot data with the program's target rep range for display.
         data = {
             "exercise": exercise,
             "one_rep_max": latest_snapshot.one_rep_max,

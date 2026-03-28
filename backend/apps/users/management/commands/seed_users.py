@@ -1,17 +1,43 @@
+"""Management command to seed user application lookup tables.
+
+This command populates the database with essential lookup data for
+ExperienceLevel, TrainingGoal, and MembershipStatus models from a
+local JSON source file.
+"""
+
 import json
 import os
 
-from django.core.management import BaseCommand
+from django.core.management.base import BaseCommand
 
 from apps.users.models import ExperienceLevel, MembershipStatus, TrainingGoal
 
 
 class Command(BaseCommand):
+    """Management command to seed users app lookup tables.
+
+    Iterates through experience levels, training goals, and membership
+    statuses defined in a JSON file and ensures they exist in the
+    database using update_or_create logic.
+    """
+
     help = (
         "Seeds users app lookup tables: ExperienceLevel, TrainingGoal, MembershipStatus"
     )
 
     def handle(self, *args, **options):
+        """Executes the seeding process for lookup tables.
+
+        Parses the 'seed_users_data.json' file and populates the database
+        with the defined lookup records.
+
+        Args:
+            *args: Variable length argument list.
+            **options: Arbitrary keyword arguments.
+
+        Raises:
+            FileNotFoundError: If the source JSON file is not found at the expected path.
+        """
         base_dir = os.path.dirname(__file__)
         file_path = os.path.join(base_dir, "seed_users_data.json")
         objects_written = 0
@@ -21,6 +47,7 @@ class Command(BaseCommand):
                 data = json.load(f)
                 self.stdout.write("Seeding Users lookup tables...")
 
+            # Seed ExperienceLevel records
             for item in data.get("experience_levels", []):
                 _, created = ExperienceLevel.objects.update_or_create(
                     code=item["code"],
@@ -33,6 +60,7 @@ class Command(BaseCommand):
                     self.stdout.write(f"    Created ExperienceLevel: {item['label']}")
                     objects_written += 1
 
+            # Seed TrainingGoal records
             for item in data.get("training_goals", []):
                 _, created = TrainingGoal.objects.update_or_create(
                     code=item["code"],
@@ -46,6 +74,7 @@ class Command(BaseCommand):
                     self.stdout.write(f"    Created TrainingGoal: {item['label']}")
                     objects_written += 1
 
+            # Seed MembershipStatus records
             for item in data.get("membership_statuses", []):
                 _, created = MembershipStatus.objects.update_or_create(
                     code=item["code"],

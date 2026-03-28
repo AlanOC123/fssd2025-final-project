@@ -24,7 +24,14 @@ User = get_user_model()
 
 
 class ProgramPhaseOptionSerializer(LabelLookupSerializer):
+    """Serializer for ProgramPhaseOption lookup data.
+
+    Includes additional duration fields for planning defaults.
+    """
+
     class Meta(LabelLookupSerializer.Meta):
+        """Metadata options for ProgramPhaseOptionSerializer."""
+
         model = ProgramPhaseOption
         fields = LabelLookupSerializer.Meta.fields + [
             "default_duration_days",
@@ -34,16 +41,31 @@ class ProgramPhaseOptionSerializer(LabelLookupSerializer):
 
 
 class ProgramStatusOptionSerializer(NormalisedLookupSerializer):
+    """Serializer for ProgramStatusOption normalized lookups."""
+
     class Meta(LabelLookupSerializer.Meta):
+        """Metadata options for ProgramStatusOptionSerializer."""
+
         model = ProgramStatusOption
 
 
 class ProgramPhaseStatusOptionSerializer(NormalisedLookupSerializer):
+    """Serializer for ProgramPhaseStatusOption normalized lookups."""
+
     class Meta(LabelLookupSerializer.Meta):
+        """Metadata options for ProgramPhaseStatusOptionSerializer."""
+
         model = ProgramPhaseStatusOption
 
 
 class ProgramPhaseWriteSerializer(ApexSerializer):
+    """Serializer for handling creation and modification of ProgramPhase instances.
+
+    Attributes:
+        program_id: Primary key of the parent program.
+        phase_option_id: Primary key of the template phase option.
+    """
+
     program_id = serializers.PrimaryKeyRelatedField(
         queryset=Program.objects.all(),
         source="program",
@@ -57,6 +79,8 @@ class ProgramPhaseWriteSerializer(ApexSerializer):
     )
 
     class Meta(ApexSerializer.Meta):
+        """Metadata options for ProgramPhaseWriteSerializer."""
+
         model = ProgramPhase
         fields = ApexSerializer.Meta.fields + [
             "program_id",
@@ -71,6 +95,18 @@ class ProgramPhaseWriteSerializer(ApexSerializer):
         ]
 
     def validate(self, attrs):
+        """Validates that planned date ranges are logically consistent.
+
+        Args:
+            attrs: Dictionary of input data.
+
+        Returns:
+            The validated data dictionary.
+
+        Raises:
+            serializers.ValidationError: If planned_start_date is on or
+                after planned_end_date.
+        """
         planned_start_date = attrs.get("planned_start_date")
         planned_end_date = attrs.get("planned_end_date")
 
@@ -84,6 +120,15 @@ class ProgramPhaseWriteSerializer(ApexSerializer):
 
 
 class ProgramPhaseReadSerializer(ApexSerializer):
+    """Serializer for detailed retrieval of ProgramPhase instances.
+
+    Attributes:
+        phase_option: Nested detail of the phase type.
+        status: Nested detail of current phase status.
+        duration_days: Calculated field for total days.
+        duration_weeks: Calculated field for total weeks.
+    """
+
     phase_option = ProgramPhaseOptionSerializer(read_only=True)
     status = ProgramPhaseStatusOptionSerializer(read_only=True)
 
@@ -104,6 +149,8 @@ class ProgramPhaseReadSerializer(ApexSerializer):
     duration_weeks = serializers.IntegerField(read_only=True)
 
     class Meta(ApexSerializer.Meta):
+        """Metadata options for ProgramPhaseReadSerializer."""
+
         model = ProgramPhase
         fields = ApexSerializer.Meta.fields + [
             "program_id",
@@ -133,6 +180,8 @@ class ProgramPhaseReadSerializer(ApexSerializer):
 
 
 class ProgramPhaseListSerializer(ApexSerializer):
+    """Simplified serializer for listing ProgramPhases within program summaries."""
+
     phase_option = ProgramPhaseOptionSerializer(read_only=True)
     status = ProgramPhaseStatusOptionSerializer(read_only=True)
 
@@ -140,6 +189,8 @@ class ProgramPhaseListSerializer(ApexSerializer):
     duration_weeks = serializers.IntegerField(read_only=True)
 
     class Meta(ApexSerializer.Meta):
+        """Metadata options for ProgramPhaseListSerializer."""
+
         model = ProgramPhase
         fields = ApexSerializer.Meta.fields + [
             "phase_option",
@@ -158,6 +209,8 @@ class ProgramPhaseListSerializer(ApexSerializer):
 
 
 class ProgramPhaseReasonSerializer(serializers.Serializer):
+    """Serializer for endpoints requiring a mandatory reason (skip/archive)."""
+
     reason = serializers.CharField(
         max_length=200,
         required=True,
@@ -167,6 +220,8 @@ class ProgramPhaseReasonSerializer(serializers.Serializer):
 
 
 class ProgramWriteSerializer(ApexSerializer):
+    """Serializer for handling creation and modification of Program instances."""
+
     trainer_client_membership_id = serializers.PrimaryKeyRelatedField(
         queryset=TrainerClientMembership.objects.all(),
         source="trainer_client_membership",
@@ -186,6 +241,8 @@ class ProgramWriteSerializer(ApexSerializer):
     )
 
     class Meta(ApexSerializer.Meta):
+        """Metadata options for ProgramWriteSerializer."""
+
         model = Program
         fields = ApexSerializer.Meta.fields + [
             "program_name",
@@ -196,6 +253,8 @@ class ProgramWriteSerializer(ApexSerializer):
 
 
 class ProgramListSerializer(ApexSerializer):
+    """Serializer for listing programs with high-level summaries and durations."""
+
     trainer_client_membership_id = serializers.UUIDField(
         source="trainer_client_membership.id",
         read_only=True,
@@ -219,6 +278,8 @@ class ProgramListSerializer(ApexSerializer):
     all_phases_finished = serializers.BooleanField(read_only=True)
 
     class Meta(ApexSerializer.Meta):
+        """Metadata options for ProgramListSerializer."""
+
         model = Program
         fields = ApexSerializer.Meta.fields + [
             "program_name",
@@ -249,6 +310,11 @@ class ProgramListSerializer(ApexSerializer):
 
 
 class ProgramDetailSerializer(ApexSerializer):
+    """Full detail serializer for Program instances including all phases.
+
+    Includes deep nested details for phases and audit-trail fields.
+    """
+
     trainer_client_membership_id = serializers.UUIDField(
         source="trainer_client_membership.id",
         read_only=True,
@@ -284,6 +350,8 @@ class ProgramDetailSerializer(ApexSerializer):
     phases = ProgramPhaseReadSerializer(many=True, read_only=True)
 
     class Meta(ApexSerializer.Meta):
+        """Metadata options for ProgramDetailSerializer."""
+
         model = Program
         fields = ApexSerializer.Meta.fields + [
             "program_name",
@@ -319,6 +387,8 @@ class ProgramDetailSerializer(ApexSerializer):
 
 
 class ProgramReviewSerializer(serializers.Serializer):
+    """Serializer for processing program review outcomes."""
+
     feedback_notes = serializers.CharField(
         max_length=500,
         required=False,
@@ -329,6 +399,8 @@ class ProgramReviewSerializer(serializers.Serializer):
 
 
 class ProgramCompleteSerializer(serializers.Serializer):
+    """Serializer for finalizing a completed program."""
+
     completion_notes = serializers.CharField(
         max_length=500,
         required=True,
@@ -338,6 +410,8 @@ class ProgramCompleteSerializer(serializers.Serializer):
 
 
 class ProgramAbandonSerializer(serializers.Serializer):
+    """Serializer for recording the abandonment of a program."""
+
     abandonment_reason = serializers.CharField(
         max_length=200,
         required=True,
