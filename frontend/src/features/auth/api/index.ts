@@ -68,20 +68,6 @@ export const authApi = {
         api.patch<AuthUser>('/auth/user/', payload),
 
     /**
-     * Uploads and updates the user's avatar image using multipart/form-data.
-     *
-     * @param file The image file to be uploaded.
-     * @return A promise resolving to the updated user profile.
-     */
-    updateAvatar: (file: File): Promise<AuthUser> => {
-        const form = new FormData()
-        form.append('avatar', file)
-        return api.patch<AuthUser>('/auth/user/', form, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        })
-    },
-
-    /**
      * Creates a new user account with the provided registration details.
      *
      * @param payload The registration data.

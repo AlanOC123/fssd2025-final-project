@@ -221,6 +221,11 @@ class TrainerProfileViewSet(
 
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ["get", "patch", "head", "options"]
+    parser_classes = [
+        parsers.MultiPartParser,
+        parsers.FormParser,
+        parsers.JSONParser,
+    ]
 
     def get_queryset(self):
         """Standard queryset for trainer profiles."""
