@@ -4,7 +4,7 @@ A full-stack personal training platform that connects trainers and clients. Trai
 
 Built as a capstone project for a Full Stack Development diploma.
 
-**Live:** https://apex-app-ar64.onrender.com
+**Live:** https://apex-app-61cj.onrender.com/
 
 ---
 
@@ -74,9 +74,7 @@ apex/
 │   ├── apps/
 │   │   ├── analytics/        # 1RM + session load snapshots
 │   │   ├── biology/          # Muscle/joint reference data
-│   │   ├── energy/           # Energy system models (Out of Scope)
 │   │   ├── exercises/        # Exercise library + external API enrichment
-│   │   ├── notifications/    # Notification models (Out of Scope)
 │   │   ├── programs/         # Programs, phases, phase options
 │   │   ├── users/            # CustomUser, TrainerProfile, ClientProfile, memberships
 │   │   └── workouts/         # Workouts, exercises, sets + completion records
